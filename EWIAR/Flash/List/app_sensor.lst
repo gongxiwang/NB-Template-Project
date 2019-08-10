@@ -1,0 +1,46 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        13/Jun/2019  09:17:28
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_sensor.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_sensor.c
+#        -lCN E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\
+#        -o E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\app_sensor.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\app_sensor.o
+#
+###############################################################################
+
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

@@ -1,0 +1,1182 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:40
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\ringbuf.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\ringbuf.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ringbuf.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\ringbuf.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\ringbuf.c
+      1          
+      2          #include "ringbuf.h"
+      3          
+      4          #define ASSERT(a)	if (!(a)) while (1){};
+      5          
+      6          //*****************************************************************************
+      7          //
+      8          // Change the value of a variable atomically.
+      9          //
+     10          // \param pulVal points to the index whose value is to be modified.
+     11          // \param ulDelta is the number of bytes to increment the index by.
+     12          // \param ulSize is the size of the buffer the index refers to.
+     13          //
+     14          // This function is used to increment a read or write buffer index that may be
+     15          // written in various different contexts. It ensures that the read/modify/write
+     16          // sequence is not interrupted and, hence, guards against corruption of the
+     17          // variable. The new value is adjusted for buffer wrap.
+     18          //
+     19          // \return None.
+     20          //
+     21          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+     22          static void
+     23          UpdateIndexAtomic(volatile unsigned long *pulVal, unsigned long ulDelta,
+     24                            unsigned long ulSize)
+     25          {
+     26          //   int mask;
+     27          	//
+     28              // Turn interrupts off temporarily.
+     29              //
+     30          //    mask = get_imask();
+     31          //	set_imask(0x0F);
+     32              //
+     33              // Update the variable value.
+     34              //
+     35              *pulVal += ulDelta;
+   \                     UpdateIndexAtomic: (+1)
+   \   00000000   0x6803             LDR      R3,[R0, #+0]
+   \   00000002   0x18C9             ADDS     R1,R1,R3
+   \   00000004   0x6001             STR      R1,[R0, #+0]
+   \   00000006   0xE002             B.N      ??UpdateIndexAtomic_0
+     36          
+     37              //
+     38              // Correct for wrap. We use a loop here since we don't want to use a
+     39              // modulus operation with interrupts off but we don't want to fail in
+     40              // case ulDelta is greater than ulSize (which is extremely unlikely but...)
+     41              //
+     42              while(*pulVal >= ulSize)
+     43              {
+     44                  *pulVal -= ulSize;
+   \                     ??UpdateIndexAtomic_1: (+1)
+   \   00000008   0x6801             LDR      R1,[R0, #+0]
+   \   0000000A   0x1A89             SUBS     R1,R1,R2
+   \   0000000C   0x6001             STR      R1,[R0, #+0]
+     45              }
+   \                     ??UpdateIndexAtomic_0: (+1)
+   \   0000000E   0x6801             LDR      R1,[R0, #+0]
+   \   00000010   0x4291             CMP      R1,R2
+   \   00000012   0xD2F9             BCS.N    ??UpdateIndexAtomic_1
+     46          
+     47              //
+     48              // Restore the interrupt state
+     49              //
+     50          //	set_imask(mask);
+     51          }
+   \   00000014   0x4770             BX       LR               ;; return
+     52          
+     53          //*****************************************************************************
+     54          //
+     55          //! Determines whether the ring buffer whose pointers and size are provided
+     56          //! is full or not.
+     57          //!
+     58          //! \param ptRingBuf is the ring buffer object to empty.
+     59          //!
+     60          //! This function is used to determine whether or not a given ring buffer is
+     61          //! full.  The structure is specifically to ensure that we do not see
+     62          //! warnings from the compiler related to the order of volatile accesses
+     63          //! being undefined.
+     64          //!
+     65          //! \return Returns \b true if the buffer is full or \b false otherwise.
+     66          //
+     67          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+     68          tBoolean
+     69          RingBufFull(tRingBufObject *ptRingBuf)
+     70          {
+     71              unsigned long ulWrite;
+     72              unsigned long ulRead;
+     73          
+     74              //
+     75              // Check the arguments.
+     76              //
+     77          //    ASSERT(ptRingBuf != NULL);
+     78          
+     79              //
+     80              // Copy the Read/Write indices for calculation.
+     81              //
+     82              ulWrite = ptRingBuf->ulWriteIndex;
+   \                     RingBufFull: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+     83              ulRead = ptRingBuf->ulReadIndex;
+   \   00000002   0x68C2             LDR      R2,[R0, #+12]
+     84          
+     85              //
+     86              // Return the full status of the buffer.
+     87              //
+     88              return((((ulWrite + 1) % ptRingBuf->ulSize) == ulRead) ? true : false);
+   \   00000004   0x1C49             ADDS     R1,R1,#+1
+   \   00000006   0x6840             LDR      R0,[R0, #+4]
+   \   00000008   0xFBB1 0xF3F0      UDIV     R3,R1,R0
+   \   0000000C   0xFB00 0x1013      MLS      R0,R0,R3,R1
+   \   00000010   0x4290             CMP      R0,R2
+   \   00000012   0xD101             BNE.N    ??RingBufFull_0
+   \   00000014   0x2001             MOVS     R0,#+1
+   \   00000016   0x4770             BX       LR
+   \                     ??RingBufFull_0: (+1)
+   \   00000018   0x2000             MOVS     R0,#+0
+   \   0000001A   0x4770             BX       LR               ;; return
+     89          }
+     90          
+     91          //*****************************************************************************
+     92          //
+     93          //! Determines whether the ring buffer whose pointers and size are provided
+     94          //! is empty or not.
+     95          //!
+     96          //! \param ptRingBuf is the ring buffer object to empty.
+     97          //!
+     98          //! This function is used to determine whether or not a given ring buffer is
+     99          //! empty.  The structure is specifically to ensure that we do not see
+    100          //! warnings from the compiler related to the order of volatile accesses
+    101          //! being undefined.
+    102          //!
+    103          //! \return Returns \b true if the buffer is empty or \b false otherwise.
+    104          //
+    105          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    106          tBoolean
+    107          RingBufEmpty(tRingBufObject *ptRingBuf)
+    108          {
+    109              unsigned long ulWrite;
+    110              unsigned long ulRead;
+    111          
+    112              //
+    113              // Check the arguments.
+    114              //
+    115          //    ASSERT(ptRingBuf != NULL);
+    116          
+    117              //
+    118              // Copy the Read/Write indices for calculation.
+    119              //
+    120              ulWrite = ptRingBuf->ulWriteIndex;
+   \                     RingBufEmpty: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+    121              ulRead = ptRingBuf->ulReadIndex;
+   \   00000002   0x68C0             LDR      R0,[R0, #+12]
+    122          
+    123              //
+    124              // Return the empty status of the buffer.
+    125              //
+    126              return((ulWrite == ulRead) ? true : false);
+   \   00000004   0x4281             CMP      R1,R0
+   \   00000006   0xD101             BNE.N    ??RingBufEmpty_0
+   \   00000008   0x2001             MOVS     R0,#+1
+   \   0000000A   0x4770             BX       LR
+   \                     ??RingBufEmpty_0: (+1)
+   \   0000000C   0x2000             MOVS     R0,#+0
+   \   0000000E   0x4770             BX       LR               ;; return
+    127          }
+    128          
+    129          //*****************************************************************************
+    130          //
+    131          //! Empties the ring buffer.
+    132          //!
+    133          //! \param ptRingBuf is the ring buffer object to empty.
+    134          //!
+    135          //! Discards all data from the ring buffer.
+    136          //!
+    137          //! \return None.
+    138          //
+    139          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    140          void
+    141          RingBufFlush(tRingBufObject *ptRingBuf)
+    142          {
+    143             // int mask;
+    144              //
+    145              // Check the arguments.
+    146              //
+    147          //    ASSERT(ptRingBuf != NULL);
+    148          
+    149              //
+    150              // Set the Read/Write pointers to be the same. Do this with interrupts
+    151              // disabled to prevent the possibility of corruption of the read index.
+    152              //
+    153          	//mask = get_imask();
+    154          //	set_imask(0x0F);
+    155          	
+    156              ptRingBuf->ulReadIndex = ptRingBuf->ulWriteIndex;
+   \                     RingBufFlush: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+   \   00000002   0x60C1             STR      R1,[R0, #+12]
+    157          	
+    158          //	set_imask(mask);
+    159          }
+   \   00000004   0x4770             BX       LR               ;; return
+    160          
+    161          //*****************************************************************************
+    162          //
+    163          //! Returns number of bytes stored in ring buffer.
+    164          //!
+    165          //! \param ptRingBuf is the ring buffer object to check.
+    166          //!
+    167          //! This function returns the number of bytes stored in the ring buffer.
+    168          //!
+    169          //! \return Returns the number of bytes stored in the ring buffer.
+    170          //
+    171          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    172          unsigned long
+    173          RingBufUsed(tRingBufObject *ptRingBuf)
+    174          {
+    175              unsigned long ulWrite;
+    176              unsigned long ulRead;
+    177          
+    178              //
+    179              // Check the arguments.
+    180              //
+    181          //    ASSERT(ptRingBuf != NULL);
+    182          
+    183              //
+    184              // Copy the Read/Write indices for calculation.
+    185              //
+    186              ulWrite = ptRingBuf->ulWriteIndex;
+   \                     RingBufUsed: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+    187              ulRead = ptRingBuf->ulReadIndex;
+   \   00000002   0x68C2             LDR      R2,[R0, #+12]
+    188          
+    189              //
+    190              // Return the number of bytes contained in the ring buffer.
+    191              //
+    192              return((ulWrite >= ulRead) ? (ulWrite - ulRead) :
+    193                     (ptRingBuf->ulSize - (ulRead - ulWrite)));
+   \   00000004   0x4291             CMP      R1,R2
+   \   00000006   0xD301             BCC.N    ??RingBufUsed_0
+   \   00000008   0x1A88             SUBS     R0,R1,R2
+   \   0000000A   0x4770             BX       LR
+   \                     ??RingBufUsed_0: (+1)
+   \   0000000C   0x6840             LDR      R0,[R0, #+4]
+   \   0000000E   0x1A80             SUBS     R0,R0,R2
+   \   00000010   0x1808             ADDS     R0,R1,R0
+   \   00000012   0x4770             BX       LR               ;; return
+    194          }
+    195          
+    196          //*****************************************************************************
+    197          //
+    198          //! Returns number of bytes available in a ring buffer.
+    199          //!
+    200          //! \param ptRingBuf is the ring buffer object to check.
+    201          //!
+    202          //! This function returns the number of bytes available in the ring buffer.
+    203          //!
+    204          //! \return Returns the number of bytes available in the ring buffer.
+    205          //
+    206          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    207          unsigned long
+    208          RingBufFree(tRingBufObject *ptRingBuf)
+    209          {
+   \                     RingBufFree: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    210              //
+    211              // Check the arguments.
+    212              //
+    213          //    ASSERT(ptRingBuf != NULL);
+    214          
+    215              //
+    216              // Return the number of bytes available in the ring buffer.
+    217              //
+    218              return((ptRingBuf->ulSize - 1) - RingBufUsed(ptRingBuf));
+   \   00000004   0x.... 0x....      BL       RingBufUsed
+   \   00000008   0x6861             LDR      R1,[R4, #+4]
+   \   0000000A   0x1E49             SUBS     R1,R1,#+1
+   \   0000000C   0x1A08             SUBS     R0,R1,R0
+   \   0000000E   0xBD10             POP      {R4,PC}          ;; return
+    219          }
+    220          
+    221          //*****************************************************************************
+    222          //
+    223          //! Returns number of contiguous bytes of data stored in ring buffer ahead of
+    224          //! the current read pointer.
+    225          //!
+    226          //! \param ptRingBuf is the ring buffer object to check.
+    227          //!
+    228          //! This function returns the number of contiguous bytes of data available in
+    229          //! the ring buffer ahead of the current read pointer. This represents the
+    230          //! largest block of data which does not straddle the buffer wrap.
+    231          //!
+    232          //! \return Returns the number of contiguous bytes available.
+    233          //
+    234          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    235          unsigned long
+    236          RingBufContigUsed(tRingBufObject *ptRingBuf)
+    237          {
+    238              unsigned long ulWrite;
+    239              unsigned long ulRead;
+    240          
+    241              //
+    242              // Check the arguments.
+    243              //
+    244          //    ASSERT(ptRingBuf != NULL);
+    245          
+    246              //
+    247              // Copy the Read/Write indices for calculation.
+    248              //
+    249              ulWrite = ptRingBuf->ulWriteIndex;
+   \                     RingBufContigUsed: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+    250              ulRead = ptRingBuf->ulReadIndex;
+   \   00000002   0x68C2             LDR      R2,[R0, #+12]
+    251          
+    252              //
+    253              // Return the number of contiguous bytes available.
+    254              //
+    255              return((ulWrite >= ulRead) ? (ulWrite - ulRead) :
+    256                     (ptRingBuf->ulSize - ulRead));
+   \   00000004   0x4291             CMP      R1,R2
+   \   00000006   0xD301             BCC.N    ??RingBufContigUsed_0
+   \   00000008   0x1A88             SUBS     R0,R1,R2
+   \   0000000A   0x4770             BX       LR
+   \                     ??RingBufContigUsed_0: (+1)
+   \   0000000C   0x6840             LDR      R0,[R0, #+4]
+   \   0000000E   0x1A80             SUBS     R0,R0,R2
+   \   00000010   0x4770             BX       LR               ;; return
+    257          }
+    258          
+    259          //*****************************************************************************
+    260          //
+    261          //! Returns number of contiguous free bytes available in a ring buffer.
+    262          //!
+    263          //! \param ptRingBuf is the ring buffer object to check.
+    264          //!
+    265          //! This function returns the number of contiguous free bytes ahead of the
+    266          //! current write pointer in the ring buffer.
+    267          //!
+    268          //! \return Returns the number of contiguous bytes available in the ring
+    269          //! buffer.
+    270          //
+    271          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    272          unsigned long
+    273          RingBufContigFree(tRingBufObject *ptRingBuf)
+    274          {
+    275              unsigned long ulWrite;
+    276              unsigned long ulRead;
+    277          
+    278              //
+    279              // Check the arguments.
+    280              //
+    281          //    ASSERT(ptRingBuf != NULL);
+    282          
+    283              //
+    284              // Copy the Read/Write indices for calculation.
+    285              //
+    286              ulWrite = ptRingBuf->ulWriteIndex;
+   \                     RingBufContigFree: (+1)
+   \   00000000   0x6881             LDR      R1,[R0, #+8]
+    287              ulRead = ptRingBuf->ulReadIndex;
+   \   00000002   0x68C2             LDR      R2,[R0, #+12]
+    288          
+    289              //
+    290              // Return the number of contiguous bytes available.
+    291              //
+    292              if(ulRead > ulWrite)
+   \   00000004   0x4291             CMP      R1,R2
+   \   00000006   0xD202             BCS.N    ??RingBufContigFree_0
+    293              {
+    294                  //
+    295                  // The read pointer is above the write pointer so the amount of free
+    296                  // space is the difference between the two indices minus 1 to account
+    297                  // for the buffer full condition (write index one behind read index).
+    298                  //
+    299                  return((ulRead - ulWrite) - 1);
+   \   00000008   0x1A50             SUBS     R0,R2,R1
+   \   0000000A   0x1E40             SUBS     R0,R0,#+1
+   \   0000000C   0x4770             BX       LR
+    300              }
+    301              else
+    302              {
+    303                  //
+    304                  // If the write pointer is above the read pointer, the amount of free
+    305                  // space is the size of the buffer minus the write index. We need to
+    306                  // add a special-case adjustment if the read index is 0 since we need
+    307                  // to leave 1 byte empty to ensure we can tell the difference between
+    308                  // the buffer being full and empty.
+    309                  //
+    310                  return(ptRingBuf->ulSize - ulWrite - ((ulRead == 0) ? 1 : 0));
+   \                     ??RingBufContigFree_0: (+1)
+   \   0000000E   0x1E52             SUBS     R2,R2,#+1
+   \   00000010   0x4192             SBCS     R2,R2,R2
+   \   00000012   0x6840             LDR      R0,[R0, #+4]
+   \   00000014   0x1A40             SUBS     R0,R0,R1
+   \   00000016   0xEBB0 0x70D2      SUBS     R0,R0,R2, LSR #+31
+   \   0000001A   0x4770             BX       LR               ;; return
+    311              }
+    312          }
+    313          
+    314          //*****************************************************************************
+    315          //
+    316          //! Return size in bytes of a ring buffer.
+    317          //!
+    318          //! \param ptRingBuf is the ring buffer object to check.
+    319          //!
+    320          //! This function returns the size of the ring buffer.
+    321          //!
+    322          //! \return Returns the size in bytes of the ring buffer.
+    323          //
+    324          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    325          unsigned long
+    326          RingBufSize(tRingBufObject *ptRingBuf)
+    327          {
+    328              //
+    329              // Check the arguments.
+    330              //
+    331          //    ASSERT(ptRingBuf != NULL);
+    332          
+    333              //
+    334              // Return the number of bytes available in the ring buffer.
+    335              //
+    336              return(ptRingBuf->ulSize);
+   \                     RingBufSize: (+1)
+   \   00000000   0x6840             LDR      R0,[R0, #+4]
+   \   00000002   0x4770             BX       LR               ;; return
+    337          }
+    338          
+    339          //*****************************************************************************
+    340          //
+    341          //! Reads a single byte of data from a ring buffer.
+    342          //!
+    343          //! \param ptRingBuf points to the ring buffer to be written to.
+    344          //!
+    345          //! This function reads a single byte of data from a ring buffer.
+    346          //!
+    347          //! \return The byte read from the ring buffer.
+    348          //
+    349          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    350          unsigned char
+    351          RingBufReadOne(tRingBufObject *ptRingBuf)
+    352          {
+   \                     RingBufReadOne: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    353              unsigned char ucTemp;
+    354          
+    355              //
+    356              // Check the arguments.
+    357              //
+    358          //    ASSERT(ptRingBuf != NULL);
+    359          
+    360              //
+    361              // Verify that space is available in the buffer.
+    362              //
+    363              ASSERT(RingBufUsed(ptRingBuf) != 0);
+   \   00000004   0x.... 0x....      BL       RingBufUsed
+   \   00000008   0x2800             CMP      R0,#+0
+   \   0000000A   0xD100             BNE.N    ??RingBufReadOne_0
+   \                     ??RingBufReadOne_1: (+1)
+   \   0000000C   0xE7FE             B.N      ??RingBufReadOne_1
+    364          
+    365              //
+    366              // Write the data byte.
+    367              //
+    368              ucTemp = ptRingBuf->pucBuf[ptRingBuf->ulReadIndex];
+   \                     ??RingBufReadOne_0: (+1)
+   \   0000000E   0x6920             LDR      R0,[R4, #+16]
+   \   00000010   0x68E1             LDR      R1,[R4, #+12]
+   \   00000012   0x5C0D             LDRB     R5,[R1, R0]
+    369          
+    370              //
+    371              // Increment the read index.
+    372              //
+    373              UpdateIndexAtomic(&ptRingBuf->ulReadIndex, 1, ptRingBuf->ulSize);
+   \   00000014   0x6862             LDR      R2,[R4, #+4]
+   \   00000016   0x2101             MOVS     R1,#+1
+   \   00000018   0xF104 0x000C      ADD      R0,R4,#+12
+   \   0000001C   0x.... 0x....      BL       UpdateIndexAtomic
+    374          
+    375              //
+    376              // Return the character read.
+    377              //
+    378              return(ucTemp);
+   \   00000020   0x4628             MOV      R0,R5
+   \   00000022   0xBD32             POP      {R1,R4,R5,PC}    ;; return
+    379          }
+    380          
+    381          //*****************************************************************************
+    382          //
+    383          //! Reads data from a ring buffer.
+    384          //!
+    385          //! \param ptRingBuf points to the ring buffer to be read from.
+    386          //! \param pucData points to where the data should be stored.
+    387          //! \param ulLength is the number of bytes to be read.
+    388          //!
+    389          //! This function reads a sequence of bytes from a ring buffer.
+    390          //!
+    391          //! \return None.
+    392          //
+    393          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    394          void
+    395          RingBufRead(tRingBufObject *ptRingBuf, unsigned char *pucData,
+    396                         unsigned long ulLength)
+    397          {
+   \                     RingBufRead: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+   \   00000006   0x0016             MOVS     R6,R2
+    398              unsigned long ulTemp;
+    399          
+    400              //
+    401              // Check the arguments.
+    402              //
+    403          //    ASSERT(ptRingBuf != NULL);
+    404          //    ASSERT(pucData != NULL);
+    405              ASSERT(ulLength != 0);
+   \   00000008   0xD100             BNE.N    ??RingBufRead_0
+   \                     ??RingBufRead_1: (+1)
+   \   0000000A   0xE7FE             B.N      ??RingBufRead_1
+    406          
+    407              //
+    408              // Verify that data is available in the buffer.
+    409              //
+    410              ASSERT(ulLength <= RingBufUsed(ptRingBuf));
+   \                     ??RingBufRead_0: (+1)
+   \   0000000C   0x.... 0x....      BL       RingBufUsed
+   \   00000010   0x42B0             CMP      R0,R6
+   \   00000012   0xD200             BCS.N    ??RingBufRead_2
+   \                     ??RingBufRead_3: (+1)
+   \   00000014   0xE7FE             B.N      ??RingBufRead_3
+    411          
+    412              //
+    413              // Read the data from the ring buffer.
+    414              //
+    415              for(ulTemp = 0; ulTemp < ulLength; ulTemp++)
+   \                     ??RingBufRead_2: (+1)
+   \   00000016   0x2700             MOVS     R7,#+0
+   \   00000018   0xE004             B.N      ??RingBufRead_4
+    416              {
+    417                  ((volatile unsigned char *)pucData)[ulTemp] = RingBufReadOne(ptRingBuf);
+   \                     ??RingBufRead_5: (+1)
+   \   0000001A   0x4620             MOV      R0,R4
+   \   0000001C   0x.... 0x....      BL       RingBufReadOne
+   \   00000020   0x5578             STRB     R0,[R7, R5]
+    418              }
+   \   00000022   0x1C7F             ADDS     R7,R7,#+1
+   \                     ??RingBufRead_4: (+1)
+   \   00000024   0x42B7             CMP      R7,R6
+   \   00000026   0xD3F8             BCC.N    ??RingBufRead_5
+    419          }
+   \   00000028   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+    420          
+    421          //*****************************************************************************
+    422          //
+    423          //! Remove bytes from the ring buffer by advancing the read index.
+    424          //!
+    425          //! \param ptRingBuf points to the ring buffer from which bytes are to be
+    426          //! removed.
+    427          //! \param ulNumBytes is the number of bytes to be removed from the buffer.
+    428          //!
+    429          //! This function advances the ring buffer read index by a given number of
+    430          //! bytes, removing that number of bytes of data from the buffer. If \e
+    431          //! ulNumBytes is larger than the number of bytes currently in the buffer, the
+    432          //! buffer is emptied.
+    433          //!
+    434          //! \return None.
+    435          //
+    436          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    437          void
+    438          RingBufAdvanceRead(tRingBufObject *ptRingBuf,
+    439                                unsigned long ulNumBytes)
+    440          {
+   \                     RingBufAdvanceRead: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+    441              unsigned long ulCount;
+    442          
+    443              //
+    444              // Check the arguments.
+    445              //
+    446          //    ASSERT(ptRingBuf != NULL);
+    447          
+    448              //
+    449              // Make sure that we are not being asked to remove more data than is
+    450              // there to be removed.
+    451              //
+    452              ulCount = RingBufUsed(ptRingBuf);
+   \   00000006   0x.... 0x....      BL       RingBufUsed
+    453              ulCount =  (ulCount < ulNumBytes) ? ulCount : ulNumBytes;
+   \   0000000A   0x42A8             CMP      R0,R5
+   \   0000000C   0xD900             BLS.N    ??RingBufAdvanceRead_0
+   \   0000000E   0x4628             MOV      R0,R5
+    454          
+    455              //
+    456              // Advance the buffer read index by the required number of bytes.
+    457              //
+    458              UpdateIndexAtomic(&ptRingBuf->ulReadIndex, ulCount,
+    459                                ptRingBuf->ulSize);
+   \                     ??RingBufAdvanceRead_0: (+1)
+   \   00000010   0x6862             LDR      R2,[R4, #+4]
+   \   00000012   0x4601             MOV      R1,R0
+   \   00000014   0xF104 0x000C      ADD      R0,R4,#+12
+   \   00000018   0xE8BD 0x4038      POP      {R3-R5,LR}
+   \   0000001C   0x....             B.N      UpdateIndexAtomic
+    460          }
+    461          
+    462          //*****************************************************************************
+    463          //
+    464          //! Add bytes to the ring buffer by advancing the write index.
+    465          //!
+    466          //! \param ptRingBuf points to the ring buffer to which bytes have been added.
+    467          //! \param ulNumBytes is the number of bytes added to the buffer.
+    468          //!
+    469          //! This function should be used by clients who wish to add data to the buffer
+    470          //! directly rather than via calls to RingBufWrite() or RingBufWriteOne(). It
+    471          //! advances the write index by a given number of bytes.  If the \e ulNumBytes
+    472          //! parameter is larger than the amount of free space in the buffer, the
+    473          //! read pointer will be advanced to cater for the addition.  Note that this
+    474          //! will result in some of the oldest data in the buffer being discarded.
+    475          //!
+    476          //! \return None.
+    477          //
+    478          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    479          void
+    480          RingBufAdvanceWrite(tRingBufObject *ptRingBuf,
+    481                                 unsigned long ulNumBytes)
+    482          {
+   \                     RingBufAdvanceWrite: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+    483              unsigned long ulCount;
+    484            //  int mask;
+    485          
+    486              //
+    487              // Check the arguments.
+    488              //
+    489          //    ASSERT(ptRingBuf != NULL);
+    490          
+    491              //
+    492              // Make sure we were not asked to add a silly number of bytes.
+    493              //
+    494              ASSERT(ulNumBytes <= ptRingBuf->ulSize);
+   \   00000006   0x6860             LDR      R0,[R4, #+4]
+   \   00000008   0x42A8             CMP      R0,R5
+   \   0000000A   0xD200             BCS.N    ??RingBufAdvanceWrite_0
+   \                     ??RingBufAdvanceWrite_1: (+1)
+   \   0000000C   0xE7FE             B.N      ??RingBufAdvanceWrite_1
+    495          
+    496              //
+    497              // Determine how much free space we currently think the buffer has.
+    498              //
+    499              ulCount = RingBufFree(ptRingBuf);
+   \                     ??RingBufAdvanceWrite_0: (+1)
+   \   0000000E   0x4620             MOV      R0,R4
+   \   00000010   0x.... 0x....      BL       RingBufFree
+    500          
+    501              //
+    502              // Advance the buffer write index by the required number of bytes and
+    503              // check that we have not run past the read index. Note that we must do
+    504              // this within a critical section (interrupts disabled) to prevent
+    505              // race conditions that could corrupt one or other of the indices.
+    506              //
+    507             // mask = get_imask();
+    508          //	set_imask(0x0F);
+    509          
+    510              //
+    511              // Update the write pointer.
+    512              //
+    513              ptRingBuf->ulWriteIndex += ulNumBytes;
+   \   00000014   0x68A1             LDR      R1,[R4, #+8]
+   \   00000016   0x1869             ADDS     R1,R5,R1
+   \   00000018   0x60A1             STR      R1,[R4, #+8]
+    514          
+    515              //
+    516              // Check and correct for wrap.
+    517              //
+    518              if(ptRingBuf->ulWriteIndex >= ptRingBuf->ulSize)
+   \   0000001A   0x6861             LDR      R1,[R4, #+4]
+   \   0000001C   0x68A2             LDR      R2,[R4, #+8]
+   \   0000001E   0x428A             CMP      R2,R1
+   \   00000020   0xD302             BCC.N    ??RingBufAdvanceWrite_2
+    519              {
+    520                  ptRingBuf->ulWriteIndex -= ptRingBuf->ulSize;
+   \   00000022   0x68A2             LDR      R2,[R4, #+8]
+   \   00000024   0x1A51             SUBS     R1,R2,R1
+   \   00000026   0x60A1             STR      R1,[R4, #+8]
+    521              }
+    522          
+    523              //
+    524              // Did the client add more bytes than the buffer had free space for?
+    525              //
+    526              if(ulCount < ulNumBytes)
+   \                     ??RingBufAdvanceWrite_2: (+1)
+   \   00000028   0x42A8             CMP      R0,R5
+   \   0000002A   0xD209             BCS.N    ??RingBufAdvanceWrite_3
+    527              {
+    528                  //
+    529                  // Yes - we need to advance the read pointer to ahead of the write
+    530                  // pointer to discard some of the oldest data.
+    531                  //
+    532                  ptRingBuf->ulReadIndex = ptRingBuf->ulWriteIndex + 1;
+   \   0000002C   0x68A0             LDR      R0,[R4, #+8]
+   \   0000002E   0x1C40             ADDS     R0,R0,#+1
+   \   00000030   0x60E0             STR      R0,[R4, #+12]
+    533          
+    534                  //
+    535                  // Correct for buffer wrap if necessary.
+    536                  //
+    537                  if(ptRingBuf->ulReadIndex >= ptRingBuf->ulSize)
+   \   00000032   0x6860             LDR      R0,[R4, #+4]
+   \   00000034   0x68E1             LDR      R1,[R4, #+12]
+   \   00000036   0x4281             CMP      R1,R0
+   \   00000038   0xD302             BCC.N    ??RingBufAdvanceWrite_3
+    538                  {
+    539                      ptRingBuf->ulReadIndex -= ptRingBuf->ulSize;
+   \   0000003A   0x68E1             LDR      R1,[R4, #+12]
+   \   0000003C   0x1A08             SUBS     R0,R1,R0
+   \   0000003E   0x60E0             STR      R0,[R4, #+12]
+    540                  }
+    541              }
+    542          
+    543              //
+    544              // Restore interrupts if we turned them off earlier.
+    545              //
+    546          //	set_imask(mask);
+    547          }
+   \                     ??RingBufAdvanceWrite_3: (+1)
+   \   00000040   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    548          
+    549          //*****************************************************************************
+    550          //
+    551          //! Writes a single byte of data to a ring buffer.
+    552          //!
+    553          //! \param ptRingBuf points to the ring buffer to be written to.
+    554          //! \param ucData is the byte to be written.
+    555          //!
+    556          //! This function writes a single byte of data into a ring buffer.
+    557          //!
+    558          //! \return None.
+    559          //
+    560          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    561          void
+    562          RingBufWriteOne(tRingBufObject *ptRingBuf, unsigned char ucData)
+    563          {
+   \                     RingBufWriteOne: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+    564              //
+    565              // Check the arguments.
+    566              //
+    567          //    ASSERT(ptRingBuf != NULL);
+    568          
+    569              //
+    570              // Verify that space is available in the buffer.
+    571              //
+    572              ASSERT(RingBufFree(ptRingBuf) != 0);
+   \   00000006   0x.... 0x....      BL       RingBufFree
+   \   0000000A   0x2800             CMP      R0,#+0
+   \   0000000C   0xD100             BNE.N    ??RingBufWriteOne_0
+   \                     ??RingBufWriteOne_1: (+1)
+   \   0000000E   0xE7FE             B.N      ??RingBufWriteOne_1
+    573          
+    574              //
+    575              // Write the data byte.
+    576              //
+    577              ptRingBuf->pucBuf[ptRingBuf->ulWriteIndex] = ucData;
+   \                     ??RingBufWriteOne_0: (+1)
+   \   00000010   0x6920             LDR      R0,[R4, #+16]
+   \   00000012   0x68A1             LDR      R1,[R4, #+8]
+   \   00000014   0x540D             STRB     R5,[R1, R0]
+    578          
+    579              //
+    580              // Increment the write index.
+    581              //
+    582              UpdateIndexAtomic(&ptRingBuf->ulWriteIndex, 1, ptRingBuf->ulSize);
+   \   00000016   0x6862             LDR      R2,[R4, #+4]
+   \   00000018   0x2101             MOVS     R1,#+1
+   \   0000001A   0xF104 0x0008      ADD      R0,R4,#+8
+   \   0000001E   0xE8BD 0x4038      POP      {R3-R5,LR}
+   \   00000022   0x....             B.N      UpdateIndexAtomic
+    583          }
+    584          
+    585          //*****************************************************************************
+    586          //
+    587          //! Writes data to a ring buffer.
+    588          //!
+    589          //! \param ptRingBuf points to the ring buffer to be written to.
+    590          //! \param pucData points to the data to be written.
+    591          //! \param ulLength is the number of bytes to be written.
+    592          //!
+    593          //! This function write a sequence of bytes into a ring buffer.
+    594          //!
+    595          //! \return None.
+    596          //
+    597          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    598          void
+    599          RingBufWrite(tRingBufObject *ptRingBuf, unsigned char *pucData,
+    600                          unsigned long ulLength)
+    601          {
+   \                     RingBufWrite: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+   \   00000006   0x0016             MOVS     R6,R2
+    602              unsigned long ulTemp;
+    603          
+    604              //
+    605              // Check the arguments.
+    606              //
+    607          //    ASSERT(ptRingBuf != NULL);
+    608          //    ASSERT(pucData != NULL);
+    609              ASSERT(ulLength != 0);
+   \   00000008   0xD100             BNE.N    ??RingBufWrite_0
+   \                     ??RingBufWrite_1: (+1)
+   \   0000000A   0xE7FE             B.N      ??RingBufWrite_1
+    610          
+    611              //
+    612              // Verify that space is available in the buffer.
+    613              //
+    614              ASSERT(ulLength <= RingBufFree(ptRingBuf));
+   \                     ??RingBufWrite_0: (+1)
+   \   0000000C   0x.... 0x....      BL       RingBufFree
+   \   00000010   0x42B0             CMP      R0,R6
+   \   00000012   0xD200             BCS.N    ??RingBufWrite_2
+   \                     ??RingBufWrite_3: (+1)
+   \   00000014   0xE7FE             B.N      ??RingBufWrite_3
+    615          
+    616              //
+    617              // Write the data into the ring buffer.
+    618              //
+    619              for(ulTemp = 0; ulTemp < ulLength; ulTemp++)
+   \                     ??RingBufWrite_2: (+1)
+   \   00000016   0x2700             MOVS     R7,#+0
+   \   00000018   0xE004             B.N      ??RingBufWrite_4
+    620              {
+    621                  RingBufWriteOne(ptRingBuf, pucData[ulTemp]);
+   \                     ??RingBufWrite_5: (+1)
+   \   0000001A   0x5D79             LDRB     R1,[R7, R5]
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0x.... 0x....      BL       RingBufWriteOne
+    622              }
+   \   00000022   0x1C7F             ADDS     R7,R7,#+1
+   \                     ??RingBufWrite_4: (+1)
+   \   00000024   0x42B7             CMP      R7,R6
+   \   00000026   0xD3F8             BCC.N    ??RingBufWrite_5
+    623          }
+   \   00000028   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+    624          
+    625          //*****************************************************************************
+    626          //
+    627          //! Initialize a ring buffer object.
+    628          //!
+    629          //! \param ptRingBuf points to the ring buffer to be initialized.
+    630          //! \param pucBuf points to the data buffer to be used for the ring buffer.
+    631          //! \param ulSize is the size of the buffer in bytes.
+    632          //!
+    633          //! This function initializes a ring buffer object, preparing it to store data.
+    634          //!
+    635          //! \return None.
+    636          //
+    637          //*****************************************************************************
+
+   \                                 In section .text, align 2, keep-with-next
+    638          void
+    639          RingBufInit(tRingBufObject *ptRingBuf, unsigned char *pucBuf,
+    640                         unsigned long ulSize)
+    641          {
+    642              //
+    643              // Check the arguments.
+    644              //
+    645          //    ASSERT(ptRingBuf != NULL);
+    646          //    ASSERT(pucBuf != NULL);
+    647              ASSERT(ulSize != 0);
+   \                     RingBufInit: (+1)
+   \   00000000   0x2A00             CMP      R2,#+0
+   \   00000002   0xD100             BNE.N    ??RingBufInit_0
+   \                     ??RingBufInit_1: (+1)
+   \   00000004   0xE7FE             B.N      ??RingBufInit_1
+    648          
+    649              //
+    650              // Initialize the ring buffer object.
+    651              //
+    652              ptRingBuf->ucWritting = 0;
+   \                     ??RingBufInit_0: (+1)
+   \   00000006   0x2300             MOVS     R3,#+0
+   \   00000008   0x7003             STRB     R3,[R0, #+0]
+    653              ptRingBuf->ulSize = ulSize;
+   \   0000000A   0x6042             STR      R2,[R0, #+4]
+    654              ptRingBuf->pucBuf = pucBuf;
+   \   0000000C   0x6101             STR      R1,[R0, #+16]
+    655              ptRingBuf->ulWriteIndex = ptRingBuf->ulReadIndex = 0;
+   \   0000000E   0x4619             MOV      R1,R3
+   \   00000010   0x60C1             STR      R1,[R0, #+12]
+   \   00000012   0x6081             STR      R1,[R0, #+8]
+    656          }
+   \   00000014   0x4770             BX       LR               ;; return
+    657          
+
+   \                                 In section .text, align 2, keep-with-next
+    658          void RingBufWriteEnter(tRingBufObject *ptRingBuf)
+    659          {
+    660              ptRingBuf->ucWritting = 1;
+   \                     RingBufWriteEnter: (+1)
+   \   00000000   0x2101             MOVS     R1,#+1
+   \   00000002   0x7001             STRB     R1,[R0, #+0]
+    661          }
+   \   00000004   0x4770             BX       LR               ;; return
+    662          
+
+   \                                 In section .text, align 2, keep-with-next
+    663          unsigned char RingBufWriteStatus(tRingBufObject *ptRingBuf)
+    664          {
+    665              return ptRingBuf->ucWritting;
+   \                     RingBufWriteStatus: (+1)
+   \   00000000   0x7800             LDRB     R0,[R0, #+0]
+   \   00000002   0x4770             BX       LR               ;; return
+    666          }
+    667          
+
+   \                                 In section .text, align 2, keep-with-next
+    668          void RingBufWriteExit(tRingBufObject *ptRingBuf)
+    669          {
+    670              ptRingBuf->ucWritting = 0;
+   \                     RingBufWriteExit: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x7001             STRB     R1,[R0, #+0]
+    671          }
+   \   00000004   0x4770             BX       LR               ;; return
+    672          
+
+   \                                 In section .text, align 2, keep-with-next
+    673          void
+    674          RingBufClear(tRingBufObject *ptRingBuf)
+    675          {
+    676          //    ASSERT(ptRingBuf != NULL);
+    677          
+    678              ptRingBuf->ulWriteIndex = ptRingBuf->ulReadIndex = 0;
+   \                     RingBufClear: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x60C1             STR      R1,[R0, #+12]
+   \   00000004   0x6081             STR      R1,[R0, #+8]
+    679          }
+   \   00000006   0x4770             BX       LR               ;; return
+    680          
+
+   \                                 In section .text, align 2, keep-with-next
+    681          unsigned char
+    682          RingBufPeekOne(tRingBufObject *ptRingBuf, unsigned long *pulPeekReadIndex)
+    683          {
+   \                     RingBufPeekOne: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+    684              unsigned char ucTemp;
+    685          	
+    686          //    ASSERT(ptRingBuf != NULL);
+    687              ASSERT(RingBufUsed(ptRingBuf) != 0);
+   \   00000006   0x.... 0x....      BL       RingBufUsed
+   \   0000000A   0x2800             CMP      R0,#+0
+   \   0000000C   0xD100             BNE.N    ??RingBufPeekOne_0
+   \                     ??RingBufPeekOne_1: (+1)
+   \   0000000E   0xE7FE             B.N      ??RingBufPeekOne_1
+    688          	
+    689              ucTemp = ptRingBuf->pucBuf[*pulPeekReadIndex];
+   \                     ??RingBufPeekOne_0: (+1)
+   \   00000010   0x6920             LDR      R0,[R4, #+16]
+   \   00000012   0x6829             LDR      R1,[R5, #+0]
+   \   00000014   0x5C0E             LDRB     R6,[R1, R0]
+    690              UpdateIndexAtomic(pulPeekReadIndex, 1, ptRingBuf->ulSize);
+   \   00000016   0x6862             LDR      R2,[R4, #+4]
+   \   00000018   0x2101             MOVS     R1,#+1
+   \   0000001A   0x4628             MOV      R0,R5
+   \   0000001C   0x.... 0x....      BL       UpdateIndexAtomic
+    691              return(ucTemp);
+   \   00000020   0x4630             MOV      R0,R6
+   \   00000022   0xBD70             POP      {R4-R6,PC}       ;; return
+    692          }
+    693          
+
+   \                                 In section .text, align 2, keep-with-next
+    694          void
+    695          RingBufPeek(tRingBufObject *ptRingBuf, unsigned char *pucData,
+    696                         unsigned long ulLength)
+    697          {
+   \                     RingBufPeek: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+   \   00000006   0x0016             MOVS     R6,R2
+    698              unsigned long 			ulTemp;
+    699          	volatile unsigned long 	ulPeekReadIndex;
+    700          
+    701          //    ASSERT(ptRingBuf != NULL);
+    702          //    ASSERT(pucData != NULL);
+    703              ASSERT(ulLength != 0);
+   \   00000008   0xD100             BNE.N    ??RingBufPeek_0
+   \                     ??RingBufPeek_1: (+1)
+   \   0000000A   0xE7FE             B.N      ??RingBufPeek_1
+    704              ASSERT(ulLength <= RingBufUsed(ptRingBuf));
+   \                     ??RingBufPeek_0: (+1)
+   \   0000000C   0x.... 0x....      BL       RingBufUsed
+   \   00000010   0x42B0             CMP      R0,R6
+   \   00000012   0xD200             BCS.N    ??RingBufPeek_2
+   \                     ??RingBufPeek_3: (+1)
+   \   00000014   0xE7FE             B.N      ??RingBufPeek_3
+    705          	
+    706          	ulPeekReadIndex = ptRingBuf->ulReadIndex;
+   \                     ??RingBufPeek_2: (+1)
+   \   00000016   0x68E0             LDR      R0,[R4, #+12]
+   \   00000018   0x9000             STR      R0,[SP, #+0]
+    707              for(ulTemp = 0; ulTemp < ulLength; ulTemp++)
+   \   0000001A   0x2700             MOVS     R7,#+0
+   \   0000001C   0xE005             B.N      ??RingBufPeek_4
+    708              {
+    709                  ((unsigned char *)pucData)[ulTemp] = RingBufPeekOne(ptRingBuf, (unsigned long *)&ulPeekReadIndex);
+   \                     ??RingBufPeek_5: (+1)
+   \   0000001E   0xA900             ADD      R1,SP,#+0
+   \   00000020   0x4620             MOV      R0,R4
+   \   00000022   0x.... 0x....      BL       RingBufPeekOne
+   \   00000026   0x5578             STRB     R0,[R7, R5]
+    710              }
+   \   00000028   0x1C7F             ADDS     R7,R7,#+1
+   \                     ??RingBufPeek_4: (+1)
+   \   0000002A   0x42B7             CMP      R7,R6
+   \   0000002C   0xD3F7             BCC.N    ??RingBufPeek_5
+    711          }
+   \   0000002E   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+    712          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   RingBufAdvanceRead
+        16   -> RingBufUsed
+         0   -> UpdateIndexAtomic
+      16   RingBufAdvanceWrite
+        16   -> RingBufFree
+       0   RingBufClear
+       0   RingBufContigFree
+       0   RingBufContigUsed
+       0   RingBufEmpty
+       0   RingBufFlush
+       8   RingBufFree
+         8   -> RingBufUsed
+       0   RingBufFull
+       0   RingBufInit
+      24   RingBufPeek
+        24   -> RingBufPeekOne
+        24   -> RingBufUsed
+      16   RingBufPeekOne
+        16   -> RingBufUsed
+        16   -> UpdateIndexAtomic
+      24   RingBufRead
+        24   -> RingBufReadOne
+        24   -> RingBufUsed
+      16   RingBufReadOne
+        16   -> RingBufUsed
+        16   -> UpdateIndexAtomic
+       0   RingBufSize
+       0   RingBufUsed
+      24   RingBufWrite
+        24   -> RingBufFree
+        24   -> RingBufWriteOne
+       0   RingBufWriteEnter
+       0   RingBufWriteExit
+      16   RingBufWriteOne
+        16   -> RingBufFree
+         0   -> UpdateIndexAtomic
+       0   RingBufWriteStatus
+       0   UpdateIndexAtomic
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      30  RingBufAdvanceRead
+      66  RingBufAdvanceWrite
+       8  RingBufClear
+      28  RingBufContigFree
+      18  RingBufContigUsed
+      16  RingBufEmpty
+       6  RingBufFlush
+      16  RingBufFree
+      28  RingBufFull
+      22  RingBufInit
+      48  RingBufPeek
+      36  RingBufPeekOne
+      42  RingBufRead
+      36  RingBufReadOne
+       4  RingBufSize
+      20  RingBufUsed
+      42  RingBufWrite
+       6  RingBufWriteEnter
+       6  RingBufWriteExit
+      36  RingBufWriteOne
+       4  RingBufWriteStatus
+      22  UpdateIndexAtomic
+
+ 
+ 540 bytes in section .text
+ 
+ 540 bytes of CODE memory
+
+Errors: none
+Warnings: none

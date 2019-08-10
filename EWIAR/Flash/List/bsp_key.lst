@@ -1,0 +1,144 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_key.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_key.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp_key.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp_key.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_key.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  InputKey_Driver.c
+      3            * @author  netfire.liang
+      4            * @version  V2.0.0
+      5            * @date  08/01/2013
+      6            * @brief  按键的驱动
+      7            */ 
+      8          #include "bsp_key.h"
+      9          #include "bsp.h"
+     10          
+     11          /**
+     12            * @brief 按键初始化
+     13           */
+
+   \                                 In section .text, align 2, keep-with-next
+     14          void BSP_KEY_Init(void)
+     15          {
+   \                     BSP_KEY_Init: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     16              GPIO_InitTypeDef gpio;
+     17          
+     18              RCC_APB2PeriphClockCmd(Key_ClockCmd, ENABLE);
+   \   00000002   0x2101             MOVS     R1,#+1
+   \   00000004   0x2004             MOVS     R0,#+4
+   \   00000006   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+     19              
+     20              gpio.GPIO_Pin = Key_Pin;
+   \   0000000A   0x2001             MOVS     R0,#+1
+   \   0000000C   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     21              gpio.GPIO_Mode = GPIO_Mode_IPU;
+   \   00000010   0x2048             MOVS     R0,#+72
+   \   00000012   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     22              gpio.GPIO_Speed = GPIO_Speed_2MHz;	
+   \   00000016   0x2002             MOVS     R0,#+2
+   \   00000018   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     23              GPIO_Init(Key_Port, &gpio);
+   \   0000001C   0xA900             ADD      R1,SP,#+0
+   \   0000001E   0x....             LDR.N    R0,??DataTable1  ;; 0x40010800
+   \   00000020   0x.... 0x....      BL       GPIO_Init
+     24          }
+   \   00000024   0xBD01             POP      {R0,PC}          ;; return
+     25          
+     26          /**
+     27            * @brief 获得按键状态
+     28           */
+
+   \                                 In section .text, align 2, keep-with-next
+     29          int InputKey_GetKey(int index)
+     30          {
+   \                     InputKey_GetKey: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     31              switch(index)
+   \   00000002   0x2800             CMP      R0,#+0
+   \   00000004   0xD107             BNE.N    ??InputKey_GetKey_0
+     32              {
+     33                case 0:
+     34                   return !GPIO_ReadInputDataBit(Key_Port, Key_Pin);
+   \   00000006   0x2101             MOVS     R1,#+1
+   \   00000008   0x....             LDR.N    R0,??DataTable1  ;; 0x40010800
+   \   0000000A   0x.... 0x....      BL       GPIO_ReadInputDataBit
+   \   0000000E   0x1E40             SUBS     R0,R0,#+1
+   \   00000010   0x4180             SBCS     R0,R0,R0
+   \   00000012   0x0FC0             LSRS     R0,R0,#+31
+   \   00000014   0xBD02             POP      {R1,PC}
+     35                   break;
+     36                default:
+     37                    assert_param(0);
+     38                    break;
+     39              }   
+     40              return 0;
+   \                     ??InputKey_GetKey_0: (+1)
+   \   00000016   0x2000             MOVS     R0,#+0
+   \   00000018   0xBD02             POP      {R1,PC}          ;; return
+     41          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1:
+   \   00000000   0x40010800         DC32     0x40010800
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   BSP_KEY_Init
+         8   -> GPIO_Init
+         8   -> RCC_APB2PeriphClockCmd
+       8   InputKey_GetKey
+         8   -> GPIO_ReadInputDataBit
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable1
+      38  BSP_KEY_Init
+      26  InputKey_GetKey
+
+ 
+ 68 bytes in section .text
+ 
+ 68 bytes of CODE memory
+
+Errors: none
+Warnings: none

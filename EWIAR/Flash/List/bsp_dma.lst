@@ -1,0 +1,1130 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_dma.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_dma.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp_dma.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp_dma.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_dma.c
+      1          #include "bsp_dma.h"
+      2          #include "stm32f10x_dma.h"
+      3          #include "bsp.h"
+      4          #include "app_uart.h"
+      5          #include "stdio.h"
+      6          #include "string.h"
+      7          #include "app_adc.h"
+      8          #include "bsp_uart.h"
+      9          #include "app_beep.h"
+     10          /* 定义DMA发送到串口的Buffer 大小 */
+     11          #define SENDBUFF_SIZE (64)
+     12          #define NBDMABUFF_SIZE 512
+     13          
+     14          /* 用来存放ADC转换结果，也是DMA的目标地址,4通道，每通道采集10次后面取平均数 */
+
+   \                                 In section .bss, align 4
+     15          volatile unsigned long ADCConvertedValue[10][4];
+   \                     ADCConvertedValue:
+   \   00000000                      DS8 160
+     16          
+     17          /* 用来存放发送到usart2的数据 */
+
+   \                                 In section .bss, align 4
+     18          static unsigned char uiSendbuf[NBDMABUFF_SIZE] = {0};
+   \                     uiSendbuf:
+   \   00000000                      DS8 512
+     19          /* 用来存放发送到usart1的数据 */
+
+   \                                 In section .bss, align 4
+     20          static unsigned char uiSendbuf1[SENDBUFF_SIZE] = {0};
+   \                     uiSendbuf1:
+   \   00000000                      DS8 64
+     21          /* 用来存放接收到usart2的数据 */
+
+   \                                 In section .bss, align 4
+     22          static unsigned char uiReceivebuf[NBDMABUFF_SIZE] = {0};
+   \                     uiReceivebuf:
+   \   00000000                      DS8 512
+     23          /* 用来存放接收到usart的数据 */
+
+   \                                 In section .bss, align 4
+     24          static unsigned char Uart1Receivebuf[SENDBUFF_SIZE] = {0};
+   \                     Uart1Receivebuf:
+   \   00000000                      DS8 64
+     25          
+     26          /*
+     27          *********************************************************************************************************
+     28          *                                             BSP_ADCDMA_Init()
+     29          *
+     30          * Description : Initialize the board's DMA
+     31          *
+     32          * Argument(s) : none.
+     33          *
+     34          * Return(s)   : none.
+     35          *
+     36          * Caller(s)   : BSP_Init().
+     37          *
+     38          * Note(s)     : none.
+     39          *********************************************************************************************************
+     40          */        
+     41          static void BSP_ADCDMA_Init(void)
+     42          {
+     43              DMA_InitTypeDef DMA_InitStructure;
+     44              RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
+     45              DMA_DeInit((DMA_Channel_TypeDef *)DMA1_Channel1_BASE);  
+     46              DMA_InitStructure.DMA_PeripheralBaseAddr = (unsigned int)&(ADC2->DR);       /* 外设地址 */
+     47              DMA_InitStructure.DMA_MemoryBaseAddr = (unsigned int)&ADCConvertedValue;    /* 传送数据地址 */
+     48              DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;                          /* 该参数规定定了外设是作为数据传输的目的地还是来源，此处是作为来源 */
+     49              DMA_InitStructure.DMA_BufferSize = 4*10;                                    /* 义指定DMA通道的DMA缓存的大小,单位为数据单位。这里也就是ADCConvertedValue的大小 */
+     50              DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            /* 设定外设地址寄存器递增与否,此处设为不变 Disable */
+     51              DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                     /* 用来设定内存地址寄存器递增与否,此处设为递增，Enable */
+     52              DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord; /* 数据宽度为16位 */
+     53              DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;         /* 数据宽度为16位 */
+     54              DMA_InitStructure.DMA_Mode = DMA_Mode_Circular;                             /* 工作在循环缓存模式 */
+     55              DMA_InitStructure.DMA_Priority = DMA_Priority_High;                         /* DMA通道拥有高优先级 分别4个等级 低、中、高、非常高 */
+     56              DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;                                /* 使能DMA通道的内存到内存传输 */
+     57              DMA_Init((DMA_Channel_TypeDef *)DMA1_Channel1_BASE, &DMA_InitStructure);	/* 根据DMA_InitStruct中指定的参数初始化DMA的通道 */
+     58          	
+     59          	DMA_Cmd((DMA_Channel_TypeDef *)DMA1_Channel1_BASE, ENABLE);                                             /* 启动DMA通道一 */
+     60          }
+     61          
+     62          
+     63          /*
+     64          *********************************************************************************************************
+     65          *                                             BSP_USARTDMA_Init()
+     66          *
+     67          * Description : Initialize the board's DMA
+     68          *
+     69          * Argument(s) : none.
+     70          *
+     71          * Return(s)   : none.
+     72          *
+     73          * Caller(s)   : BSP_Init().
+     74          *
+     75          * Note(s)     : none.
+     76          *********************************************************************************************************
+     77          */        
+
+   \                                 In section .text, align 2, keep-with-next
+     78          static void BSP_USART2DMASEND_Init(void)
+     79          {
+   \                     BSP_USART2DMASEND_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB08C             SUB      SP,SP,#+48
+     80              DMA_InitTypeDef DMA_InitStructure;
+     81              DMA_DeInit((DMA_Channel_TypeDef *)DMA1_Channel7_BASE);  
+   \   00000004   0x....             LDR.N    R4,??DataTable11  ;; 0x40020080
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       DMA_DeInit
+     82              DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART2->DR;				/* 外设地址 */
+   \   0000000C   0x....             LDR.N    R0,??DataTable11_1  ;; 0x40004404
+   \   0000000E   0x9000             STR      R0,[SP, #+0]
+     83              DMA_InitStructure.DMA_MemoryBaseAddr = (u32)uiSendbuf;    					/* 传送数据地址 */
+   \   00000010   0x....             LDR.N    R0,??DataTable11_2
+   \   00000012   0x9001             STR      R0,[SP, #+4]
+     84              DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;                          /* 方向从内存到外设 */
+   \   00000014   0x2010             MOVS     R0,#+16
+   \   00000016   0x9002             STR      R0,[SP, #+8]
+     85              DMA_InitStructure.DMA_BufferSize = NBDMABUFF_SIZE;                           /* 传输大小 */
+   \   00000018   0xF44F 0x7000      MOV      R0,#+512
+   \   0000001C   0x9003             STR      R0,[SP, #+12]
+     86              DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            /* 设定外设地址寄存器递增与否,此处设为不变 Disable */
+   \   0000001E   0x2000             MOVS     R0,#+0
+   \   00000020   0x9004             STR      R0,[SP, #+16]
+     87              DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                     /* 用来设定内存地址寄存器递增与否,此处设为递增，Enable */
+   \   00000022   0x2080             MOVS     R0,#+128
+   \   00000024   0x9005             STR      R0,[SP, #+20]
+     88              DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; 	/* 数据宽度为16位 */
+   \   00000026   0x2000             MOVS     R0,#+0
+   \   00000028   0x9006             STR      R0,[SP, #+24]
+     89              DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         	/* 数据宽度为16位 */
+   \   0000002A   0x9007             STR      R0,[SP, #+28]
+     90              DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;                             	/* 工作在循环缓存模式 */
+   \   0000002C   0x9008             STR      R0,[SP, #+32]
+     91              DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;                     /* DMA通道拥有高优先级 分别4个等级 低、中、高、非常高 */
+   \   0000002E   0xF44F 0x5040      MOV      R0,#+12288
+   \   00000032   0x9009             STR      R0,[SP, #+36]
+     92              DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;                                /* 使能DMA通道的内存到内存传输 */
+   \   00000034   0x2000             MOVS     R0,#+0
+   \   00000036   0x900A             STR      R0,[SP, #+40]
+     93          	DMA_Init((DMA_Channel_TypeDef *)DMA1_Channel7_BASE, &DMA_InitStructure);    /* 根据DMA_InitStruct中指定的参数初始化DMA的通道 */
+   \   00000038   0xA900             ADD      R1,SP,#+0
+   \   0000003A   0x4620             MOV      R0,R4
+   \   0000003C   0x.... 0x....      BL       DMA_Init
+     94          	DMA_Cmd((DMA_Channel_TypeDef *)DMA1_Channel7_BASE, ENABLE);                                             /* 启动DMA通道一 */
+   \   00000040   0x2101             MOVS     R1,#+1
+   \   00000042   0x4620             MOV      R0,R4
+   \   00000044   0x.... 0x....      BL       DMA_Cmd
+     95          }
+   \   00000048   0xB00C             ADD      SP,SP,#+48
+   \   0000004A   0xBD10             POP      {R4,PC}          ;; return
+     96          
+     97          /*
+     98          *********************************************************************************************************
+     99          *                                             BSP_USART1DMASEND_Init()
+    100          *
+    101          * Description : Initialize the board's DMA
+    102          *
+    103          * Argument(s) : none.
+    104          *
+    105          * Return(s)   : none.
+    106          *
+    107          * Caller(s)   : BSP_Init().
+    108          *
+    109          * Note(s)     : none.
+    110          *********************************************************************************************************
+    111          */        
+
+   \                                 In section .text, align 2, keep-with-next
+    112          static void BSP_USART1DMASEND_Init(void)
+    113          {
+   \                     BSP_USART1DMASEND_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB08C             SUB      SP,SP,#+48
+    114              DMA_InitTypeDef DMA_InitStructure;
+    115              DMA_DeInit((DMA_Channel_TypeDef *)DMA1_Channel4_BASE);  
+   \   00000004   0x....             LDR.N    R4,??DataTable11_3  ;; 0x40020044
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       DMA_DeInit
+    116              DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART1->DR;				/* 外设地址 */
+   \   0000000C   0x....             LDR.N    R0,??DataTable11_4  ;; 0x40013804
+   \   0000000E   0x9000             STR      R0,[SP, #+0]
+    117              DMA_InitStructure.DMA_MemoryBaseAddr = (u32)uiSendbuf1;    					/* 传送数据地址 */
+   \   00000010   0x....             LDR.N    R0,??DataTable11_5
+   \   00000012   0x9001             STR      R0,[SP, #+4]
+    118              DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralDST;                          /* 方向从内存到外设 */
+   \   00000014   0x2010             MOVS     R0,#+16
+   \   00000016   0x9002             STR      R0,[SP, #+8]
+    119              DMA_InitStructure.DMA_BufferSize = SENDBUFF_SIZE;                           /* 传输大小 */
+   \   00000018   0x2040             MOVS     R0,#+64
+   \   0000001A   0x9003             STR      R0,[SP, #+12]
+    120              DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            /* 设定外设地址寄存器递增与否,此处设为不变 Disable */
+   \   0000001C   0x2000             MOVS     R0,#+0
+   \   0000001E   0x9004             STR      R0,[SP, #+16]
+    121              DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                     /* 用来设定内存地址寄存器递增与否,此处设为递增，Enable */
+   \   00000020   0x2080             MOVS     R0,#+128
+   \   00000022   0x9005             STR      R0,[SP, #+20]
+    122              DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; 	/* 数据宽度为16位 */
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0x9006             STR      R0,[SP, #+24]
+    123              DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         	/* 数据宽度为16位 */
+   \   00000028   0x9007             STR      R0,[SP, #+28]
+    124              DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;                             	/* 工作在循环缓存模式 */
+   \   0000002A   0x9008             STR      R0,[SP, #+32]
+    125              DMA_InitStructure.DMA_Priority = DMA_Priority_VeryHigh;                     /* DMA通道拥有高优先级 分别4个等级 低、中、高、非常高 */
+   \   0000002C   0xF44F 0x5040      MOV      R0,#+12288
+   \   00000030   0x9009             STR      R0,[SP, #+36]
+    126              DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;                                /* 使能DMA通道的内存到内存传输 */
+   \   00000032   0x2000             MOVS     R0,#+0
+   \   00000034   0x900A             STR      R0,[SP, #+40]
+    127          	DMA_Init((DMA_Channel_TypeDef *)DMA1_Channel4_BASE, &DMA_InitStructure);    /* 根据DMA_InitStruct中指定的参数初始化DMA的通道 */
+   \   00000036   0xA900             ADD      R1,SP,#+0
+   \   00000038   0x4620             MOV      R0,R4
+   \   0000003A   0x.... 0x....      BL       DMA_Init
+    128          	DMA_ITConfig((DMA_Channel_TypeDef *)DMA1_Channel4_BASE, DMA_IT_TC,ENABLE);  //配置DMA发送完成后产生中断
+   \   0000003E   0x2201             MOVS     R2,#+1
+   \   00000040   0x2102             MOVS     R1,#+2
+   \   00000042   0x4620             MOV      R0,R4
+   \   00000044   0x.... 0x....      BL       DMA_ITConfig
+    129          	DMA_Cmd((DMA_Channel_TypeDef *)DMA1_Channel4_BASE, ENABLE);                                             /* 启动DMA通道一 */
+   \   00000048   0x2101             MOVS     R1,#+1
+   \   0000004A   0x4620             MOV      R0,R4
+   \   0000004C   0x.... 0x....      BL       DMA_Cmd
+    130          }
+   \   00000050   0xB00C             ADD      SP,SP,#+48
+   \   00000052   0xBD10             POP      {R4,PC}          ;; return
+    131          
+    132          
+    133          /*
+    134          *********************************************************************************************************
+    135          *                                             BSP_USARTDMA_Init()
+    136          *
+    137          * Description : Initialize the board's DMA
+    138          *
+    139          * Argument(s) : none.
+    140          *
+    141          * Return(s)   : none.
+    142          *
+    143          * Caller(s)   : BSP_Init().
+    144          *
+    145          * Note(s)     : none.
+    146          *********************************************************************************************************
+    147          */        
+
+   \                                 In section .text, align 2, keep-with-next
+    148          static void BSP_USART2RXDMA_Init(void)
+    149          {
+   \                     BSP_USART2RXDMA_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB08C             SUB      SP,SP,#+48
+    150              DMA_InitTypeDef DMA_InitStructure;
+    151              DMA_DeInit((DMA_Channel_TypeDef *)DMA1_Channel6_BASE);  
+   \   00000004   0x....             LDR.N    R4,??DataTable11_6  ;; 0x4002006c
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       DMA_DeInit
+    152              DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART2->DR;				/* 外设地址 */
+   \   0000000C   0x....             LDR.N    R0,??DataTable11_1  ;; 0x40004404
+   \   0000000E   0x9000             STR      R0,[SP, #+0]
+    153              DMA_InitStructure.DMA_MemoryBaseAddr = (u32)uiReceivebuf;    				/* 传送数据地址 */
+   \   00000010   0x....             LDR.N    R0,??DataTable11_7
+   \   00000012   0x9001             STR      R0,[SP, #+4]
+    154              DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;                          /* 方向从内存到外设 */
+   \   00000014   0x2000             MOVS     R0,#+0
+   \   00000016   0x9002             STR      R0,[SP, #+8]
+    155              DMA_InitStructure.DMA_BufferSize = SENDBUFF_SIZE;                           /* 传输大小 */
+   \   00000018   0x2040             MOVS     R0,#+64
+   \   0000001A   0x9003             STR      R0,[SP, #+12]
+    156              DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            /* 设定外设地址寄存器递增与否,此处设为不变 Disable */
+   \   0000001C   0x2000             MOVS     R0,#+0
+   \   0000001E   0x9004             STR      R0,[SP, #+16]
+    157              DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                     /* 用来设定内存地址寄存器递增与否,此处设为递增，Enable */
+   \   00000020   0x2080             MOVS     R0,#+128
+   \   00000022   0x9005             STR      R0,[SP, #+20]
+    158              DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; 	/* 数据宽度为16位 */
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0x9006             STR      R0,[SP, #+24]
+    159              DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         	/* 数据宽度为16位 */
+   \   00000028   0x9007             STR      R0,[SP, #+28]
+    160              DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;                             	/* 工作在循环缓存模式 */
+   \   0000002A   0x9008             STR      R0,[SP, #+32]
+    161              DMA_InitStructure.DMA_Priority = DMA_Priority_High;                     /* DMA通道拥有高优先级 分别4个等级 低、中、高、非常高 */
+   \   0000002C   0xF44F 0x5000      MOV      R0,#+8192
+   \   00000030   0x9009             STR      R0,[SP, #+36]
+    162              DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;                                /* 使能DMA通道的内存到内存传输 */
+   \   00000032   0x2000             MOVS     R0,#+0
+   \   00000034   0x900A             STR      R0,[SP, #+40]
+    163          	DMA_Init((DMA_Channel_TypeDef *)DMA1_Channel6_BASE, &DMA_InitStructure);    /* 根据DMA_InitStruct中指定的参数初始化DMA的通道 */
+   \   00000036   0xA900             ADD      R1,SP,#+0
+   \   00000038   0x4620             MOV      R0,R4
+   \   0000003A   0x.... 0x....      BL       DMA_Init
+    164          	DMA_Cmd((DMA_Channel_TypeDef *)DMA1_Channel6_BASE, ENABLE);                                             /* 启动DMA通道一 */
+   \   0000003E   0x2101             MOVS     R1,#+1
+   \   00000040   0x4620             MOV      R0,R4
+   \   00000042   0x.... 0x....      BL       DMA_Cmd
+    165          }
+   \   00000046   0xB00C             ADD      SP,SP,#+48
+   \   00000048   0xBD10             POP      {R4,PC}          ;; return
+    166          
+    167          /*
+    168          *********************************************************************************************************
+    169          *                                             BSP_USARTDMA_Init()
+    170          *
+    171          * Description : Initialize the board's DMA
+    172          *
+    173          * Argument(s) : none.
+    174          *
+    175          * Return(s)   : none.
+    176          *
+    177          * Caller(s)   : BSP_Init().
+    178          *
+    179          * Note(s)     : none.
+    180          *********************************************************************************************************
+    181          */        
+
+   \                                 In section .text, align 2, keep-with-next
+    182          static void BSP_USART1RXDMA_Init(void)
+    183          {
+   \                     BSP_USART1RXDMA_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB08C             SUB      SP,SP,#+48
+    184              DMA_InitTypeDef DMA_InitStructure;
+    185              DMA_DeInit((DMA_Channel_TypeDef *)DMA1_Channel5_BASE);  
+   \   00000004   0x....             LDR.N    R4,??DataTable11_8  ;; 0x40020058
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       DMA_DeInit
+    186              DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)&USART1->DR;				/* 外设地址 */
+   \   0000000C   0x....             LDR.N    R0,??DataTable11_4  ;; 0x40013804
+   \   0000000E   0x9000             STR      R0,[SP, #+0]
+    187              DMA_InitStructure.DMA_MemoryBaseAddr = (u32)Uart1Receivebuf;    				/* 传送数据地址 */
+   \   00000010   0x....             LDR.N    R0,??DataTable11_9
+   \   00000012   0x9001             STR      R0,[SP, #+4]
+    188              DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;                          /* 方向从内存到外设 */
+   \   00000014   0x2000             MOVS     R0,#+0
+   \   00000016   0x9002             STR      R0,[SP, #+8]
+    189              DMA_InitStructure.DMA_BufferSize = SENDBUFF_SIZE;                           /* 传输大小 */
+   \   00000018   0x2040             MOVS     R0,#+64
+   \   0000001A   0x9003             STR      R0,[SP, #+12]
+    190              DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;            /* 设定外设地址寄存器递增与否,此处设为不变 Disable */
+   \   0000001C   0x2000             MOVS     R0,#+0
+   \   0000001E   0x9004             STR      R0,[SP, #+16]
+    191              DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;                     /* 用来设定内存地址寄存器递增与否,此处设为递增，Enable */
+   \   00000020   0x2080             MOVS     R0,#+128
+   \   00000022   0x9005             STR      R0,[SP, #+20]
+    192              DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte; 	/* 数据宽度为16位 */
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0x9006             STR      R0,[SP, #+24]
+    193              DMA_InitStructure.DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;         	/* 数据宽度为16位 */
+   \   00000028   0x9007             STR      R0,[SP, #+28]
+    194              DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;                             	/* 工作在循环缓存模式 */
+   \   0000002A   0x9008             STR      R0,[SP, #+32]
+    195              DMA_InitStructure.DMA_Priority = DMA_Priority_High;                     /* DMA通道拥有高优先级 分别4个等级 低、中、高、非常高 */
+   \   0000002C   0xF44F 0x5000      MOV      R0,#+8192
+   \   00000030   0x9009             STR      R0,[SP, #+36]
+    196              DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;                                /* 使能DMA通道的内存到内存传输 */
+   \   00000032   0x2000             MOVS     R0,#+0
+   \   00000034   0x900A             STR      R0,[SP, #+40]
+    197          	DMA_Init((DMA_Channel_TypeDef *)DMA1_Channel5_BASE, &DMA_InitStructure);    /* 根据DMA_InitStruct中指定的参数初始化DMA的通道 */
+   \   00000036   0xA900             ADD      R1,SP,#+0
+   \   00000038   0x4620             MOV      R0,R4
+   \   0000003A   0x.... 0x....      BL       DMA_Init
+    198          	DMA_Cmd((DMA_Channel_TypeDef *)DMA1_Channel5_BASE, ENABLE);                                             /* 启动DMA通道一 */
+   \   0000003E   0x2101             MOVS     R1,#+1
+   \   00000040   0x4620             MOV      R0,R4
+   \   00000042   0x.... 0x....      BL       DMA_Cmd
+    199          }
+   \   00000046   0xB00C             ADD      SP,SP,#+48
+   \   00000048   0xBD10             POP      {R4,PC}          ;; return
+    200          
+    201          
+    202          /*
+    203          *********************************************************************************************************
+    204          *                                             BSP_USARTDMA_Init()
+    205          *
+    206          * Description : Initialize the board's DMA
+    207          *
+    208          * Argument(s) : none.
+    209          *
+    210          * Return(s)   : none.
+    211          *
+    212          * Caller(s)   : BSP_Init().
+    213          *
+    214          * Note(s)     : none.
+    215          *********************************************************************************************************
+    216          */
+
+   \                                 In section .text, align 2, keep-with-next
+    217          static void DMANVIC_Configuration(void)
+    218          {
+   \                     DMANVIC_Configuration: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    219          	NVIC_InitTypeDef NVIC_InitStructure;     /* Configure one bit for preemption priority */
+    220          	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);     
+   \   00000002   0xF44F 0x60C0      MOV      R0,#+1536
+   \   00000006   0x.... 0x....      BL       NVIC_PriorityGroupConfig
+    221          	NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel4_IRQChannel;     
+   \   0000000A   0x200E             MOVS     R0,#+14
+   \   0000000C   0xF88D 0x0000      STRB     R0,[SP, #+0]
+    222          	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xF88D 0x0001      STRB     R0,[SP, #+1]
+    223          	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+   \   00000016   0xF88D 0x0002      STRB     R0,[SP, #+2]
+    224          	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;          
+   \   0000001A   0xF88D 0x0003      STRB     R0,[SP, #+3]
+    225          	NVIC_Init(&NVIC_InitStructure);
+   \   0000001E   0xA800             ADD      R0,SP,#+0
+   \   00000020   0x.... 0x....      BL       NVIC_Init
+    226          	BSP_IntVectSet(BSP_INT_ID_DMA1_CH4, BSP_IntHandlerDMA1_CH4); 				//设置串口1的中断向量，必须要有的
+   \   00000024   0x.... 0x....      ADR.W    R1,BSP_IntHandlerDMA1_CH4
+   \   00000028   0x200E             MOVS     R0,#+14
+   \   0000002A   0x.... 0x....      BL       BSP_IntVectSet
+    227          	BSP_IntEn(BSP_INT_ID_DMA1_CH4);
+   \   0000002E   0x200E             MOVS     R0,#+14
+   \   00000030   0x.... 0x....      BL       BSP_IntEn
+    228          }
+   \   00000034   0xBD01             POP      {R0,PC}          ;; return
+    229          
+    230          /*
+    231          *********************************************************************************************************
+    232          *                                             BSP_USARTDMA_Init()
+    233          *
+    234          * Description : Initialize the board's DMA
+    235          *
+    236          * Argument(s) : none.
+    237          *
+    238          * Return(s)   : none.
+    239          *
+    240          * Caller(s)   : BSP_Init().
+    241          *
+    242          * Note(s)     : none.
+    243          *********************************************************************************************************
+    244          */
+
+   \                                 In section .text, align 2, keep-with-next
+    245          void BSP_DMA_Init(void)
+    246          {
+   \                     BSP_DMA_Init: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    247          	//BSP_ADCDMA_Init();
+    248          	BSP_USART2DMASEND_Init();
+   \   00000002   0x.... 0x....      BL       BSP_USART2DMASEND_Init
+    249          	BSP_USART2RXDMA_Init();
+   \   00000006   0x.... 0x....      BL       BSP_USART2RXDMA_Init
+    250          	BSP_USART1RXDMA_Init();
+   \   0000000A   0x.... 0x....      BL       BSP_USART1RXDMA_Init
+    251          	BSP_USART1DMASEND_Init();
+   \   0000000E   0x.... 0x....      BL       BSP_USART1DMASEND_Init
+    252          	DMANVIC_Configuration();
+   \   00000012   0xE8BD 0x4001      POP      {R0,LR}
+   \   00000016   0x....             B.N      DMANVIC_Configuration
+    253          }
+    254          
+    255          /*
+    256          *********************************************************************************************************
+    257          *                                             NBiotDMA_Send_Data()
+    258          *
+    259          * Description : Initialize the board's DMA
+    260          *
+    261          * Argument(s) : none.
+    262          *
+    263          * Return(s)   : none.
+    264          *
+    265          * Caller(s)   : BSP_Init().
+    266          *
+    267          * Note(s)     : none.
+    268          *********************************************************************************************************
+    269          */
+    270          
+
+   \                                 In section .text, align 2, keep-with-next
+    271          void NBiotDMA_Send_Data(char *buffer)
+    272          {
+   \                     NBiotDMA_Send_Data: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    273          	if(buffer != NULL)
+   \   00000004   0xD028             BEQ.N    ??NBiotDMA_Send_Data_0
+    274          	{
+    275          		/* 填充将要发送的数据 */
+    276          		memcpy(uiSendbuf, buffer, strlen(buffer));
+   \   00000006   0x.... 0x....      BL       strlen
+   \   0000000A   0x....             LDR.N    R5,??DataTable11_2
+   \   0000000C   0x4602             MOV      R2,R0
+   \   0000000E   0x4621             MOV      R1,R4
+   \   00000010   0x4628             MOV      R0,R5
+   \   00000012   0x.... 0x....      BL       __aeabi_memcpy
+    277          		/* 启动DMA发送 */
+    278          		USART_DMACmd(USART2, USART_DMAReq_Tx, ENABLE);
+   \   00000016   0x....             LDR.N    R4,??DataTable11_10  ;; 0x40004400
+   \   00000018   0x2201             MOVS     R2,#+1
+   \   0000001A   0x2180             MOVS     R1,#+128
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0x.... 0x....      BL       USART_DMACmd
+    279          		/* 等待通道7传输完成 */
+    280          		while(DMA1_Channel7->CNDTR != 0);
+   \                     ??NBiotDMA_Send_Data_1: (+1)
+   \   00000022   0x....             LDR.N    R0,??DataTable11_11  ;; 0x40020084
+   \   00000024   0x6800             LDR      R0,[R0, #+0]
+   \   00000026   0x2800             CMP      R0,#+0
+   \   00000028   0xD1FB             BNE.N    ??NBiotDMA_Send_Data_1
+    281          		/* Test */
+    282          		debug_printf("DMA:%s\r\n", uiSendbuf);
+   \   0000002A   0x4629             MOV      R1,R5
+   \   0000002C   0x.... 0x....      ADR.W    R0,?_0
+   \   00000030   0x.... 0x....      BL       debug_printf
+    283          		USART_DMACmd(USART2, USART_DMAReq_Tx, DISABLE);
+   \   00000034   0x2200             MOVS     R2,#+0
+   \   00000036   0x2180             MOVS     R1,#+128
+   \   00000038   0x4620             MOV      R0,R4
+   \   0000003A   0x.... 0x....      BL       USART_DMACmd
+    284          		DMA_ClearITPendingBit(DMA1_IT_TC7);	
+   \   0000003E   0xF04F 0x7000      MOV      R0,#+33554432
+   \   00000042   0x.... 0x....      BL       DMA_ClearITPendingBit
+    285          		/* 发送完成清零 */
+    286          		memset(uiSendbuf, 0, NBDMABUFF_SIZE);
+   \   00000046   0x2200             MOVS     R2,#+0
+   \   00000048   0xF44F 0x7100      MOV      R1,#+512
+   \   0000004C   0x4628             MOV      R0,R5
+   \   0000004E   0x.... 0x....      BL       __aeabi_memset4
+    287          		/* 依据网上说法：普通发送模式每次发送完成需要重新对DMA进行初始化 */
+    288          		BSP_USART2DMASEND_Init();
+   \   00000052   0xE8BD 0x4031      POP      {R0,R4,R5,LR}
+   \   00000056   0x....             B.N      BSP_USART2DMASEND_Init
+    289          	}
+    290          }
+   \                     ??NBiotDMA_Send_Data_0: (+1)
+   \   00000058   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    291          
+    292          /*
+    293          *********************************************************************************************************
+    294          *                                             NBiotDMA_Send_Data()
+    295          *
+    296          * Description : Initialize the board's DMA
+    297          *
+    298          * Argument(s) : none.
+    299          *
+    300          * Return(s)   : none.
+    301          *
+    302          * Caller(s)   : BSP_Init().
+    303          *
+    304          * Note(s)     : none.
+    305          *********************************************************************************************************
+    306          */
+    307          
+
+   \                                 In section .text, align 2, keep-with-next
+    308          void LoRaDMA_Send_Data(char *buffer)
+    309          {
+   \                     LoRaDMA_Send_Data: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    310          	if(buffer != NULL)
+   \   00000004   0xD028             BEQ.N    ??LoRaDMA_Send_Data_0
+    311          	{
+    312          		/* 填充将要发送的数据 */
+    313          		memcpy((char *)uiSendbuf, buffer, strlen(buffer));
+   \   00000006   0x.... 0x....      BL       strlen
+   \   0000000A   0x....             LDR.N    R5,??DataTable11_2
+   \   0000000C   0x4602             MOV      R2,R0
+   \   0000000E   0x4621             MOV      R1,R4
+   \   00000010   0x4628             MOV      R0,R5
+   \   00000012   0x.... 0x....      BL       __aeabi_memcpy
+    314          		/* 启动DMA发送 */
+    315          		USART_DMACmd(USART2, USART_DMAReq_Tx, ENABLE);
+   \   00000016   0x....             LDR.N    R4,??DataTable11_10  ;; 0x40004400
+   \   00000018   0x2201             MOVS     R2,#+1
+   \   0000001A   0x2180             MOVS     R1,#+128
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0x.... 0x....      BL       USART_DMACmd
+    316          		/* 等待通道7传输完成 */
+    317          		while(DMA1_Channel7->CNDTR != 0);
+   \                     ??LoRaDMA_Send_Data_1: (+1)
+   \   00000022   0x....             LDR.N    R0,??DataTable11_11  ;; 0x40020084
+   \   00000024   0x6800             LDR      R0,[R0, #+0]
+   \   00000026   0x2800             CMP      R0,#+0
+   \   00000028   0xD1FB             BNE.N    ??LoRaDMA_Send_Data_1
+    318          		USART_DMACmd(USART2, USART_DMAReq_Tx, DISABLE);
+   \   0000002A   0x2200             MOVS     R2,#+0
+   \   0000002C   0x2180             MOVS     R1,#+128
+   \   0000002E   0x4620             MOV      R0,R4
+   \   00000030   0x.... 0x....      BL       USART_DMACmd
+    319          		DMA_ClearITPendingBit(DMA1_IT_TC7);
+   \   00000034   0xF04F 0x7000      MOV      R0,#+33554432
+   \   00000038   0x.... 0x....      BL       DMA_ClearITPendingBit
+    320          
+    321          		/* Test */
+    322          		debug_printf("DMA:%s\r\n", uiSendbuf);
+   \   0000003C   0x4629             MOV      R1,R5
+   \   0000003E   0x.... 0x....      ADR.W    R0,?_0
+   \   00000042   0x.... 0x....      BL       debug_printf
+    323          		/* 发送完成清零 */
+    324          		memset(uiSendbuf, 0, NBDMABUFF_SIZE);
+   \   00000046   0x2200             MOVS     R2,#+0
+   \   00000048   0xF44F 0x7100      MOV      R1,#+512
+   \   0000004C   0x4628             MOV      R0,R5
+   \   0000004E   0x.... 0x....      BL       __aeabi_memset4
+    325          		/* 依据网上说法：普通发送模式每次发送完成需要重新对DMA进行初始化 */
+    326          		BSP_USART2DMASEND_Init();
+   \   00000052   0xE8BD 0x4031      POP      {R0,R4,R5,LR}
+   \   00000056   0x....             B.N      BSP_USART2DMASEND_Init
+    327          	}
+    328          }
+   \                     ??LoRaDMA_Send_Data_0: (+1)
+   \   00000058   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    329          
+    330          /*
+    331          *********************************************************************************************************
+    332          *                                             NBiotDMA_Send_Data()
+    333          *
+    334          * Description : Initialize the board's DMA
+    335          *
+    336          * Argument(s) : none.
+    337          *
+    338          * Return(s)   : none.
+    339          *
+    340          * Caller(s)   : BSP_Init().
+    341          *
+    342          * Note(s)     : none.
+    343          *********************************************************************************************************
+    344          */
+    345          
+
+   \                                 In section .text, align 2, keep-with-next
+    346          void USART1DMA_Send_Data(u8 *buffer, int Size)
+    347          {
+   \                     USART1DMA_Send_Data: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+    348          	if(buffer != NULL)
+   \   00000002   0x2800             CMP      R0,#+0
+   \   00000004   0xD026             BEQ.N    ??USART1DMA_Send_Data_0
+    349          	{	
+    350          		memcpy((char*)uiSendbuf1, (char*)buffer, Size);		/* 填充将要发送的数据--此处使用memcpy较好 */	
+   \   00000006   0x....             LDR.N    R4,??DataTable11_5
+   \   00000008   0x460A             MOV      R2,R1
+   \   0000000A   0x4601             MOV      R1,R0
+   \   0000000C   0x4620             MOV      R0,R4
+   \   0000000E   0x.... 0x....      BL       __aeabi_memcpy
+    351          		USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);	    /* 启动DMA发送 */		
+   \   00000012   0x....             LDR.N    R5,??DataTable11_12  ;; 0x40013800
+   \   00000014   0x2201             MOVS     R2,#+1
+   \   00000016   0x2180             MOVS     R1,#+128
+   \   00000018   0x4628             MOV      R0,R5
+   \   0000001A   0x.... 0x....      BL       USART_DMACmd
+    352          		while(DMA1_Channel4->CNDTR != 0);				    /* 等待通道4传输完成 */	
+   \                     ??USART1DMA_Send_Data_1: (+1)
+   \   0000001E   0x....             LDR.N    R0,??DataTable11_13  ;; 0x40020048
+   \   00000020   0x6800             LDR      R0,[R0, #+0]
+   \   00000022   0x2800             CMP      R0,#+0
+   \   00000024   0xD1FB             BNE.N    ??USART1DMA_Send_Data_1
+    353          		OSTimeDlyHMSM(0,0,0,100);						    /* 实测证明需要延迟10ms左右使发送完整且不乱码 */
+   \   00000026   0x2364             MOVS     R3,#+100
+   \   00000028   0x2200             MOVS     R2,#+0
+   \   0000002A   0x4611             MOV      R1,R2
+   \   0000002C   0x4608             MOV      R0,R1
+   \   0000002E   0x.... 0x....      BL       OSTimeDlyHMSM
+    354          		USART_DMACmd(USART1, USART_DMAReq_Tx, DISABLE);
+   \   00000032   0x2200             MOVS     R2,#+0
+   \   00000034   0x2180             MOVS     R1,#+128
+   \   00000036   0x4628             MOV      R0,R5
+   \   00000038   0x.... 0x....      BL       USART_DMACmd
+    355          		DMA_ClearITPendingBit(DMA1_IT_TC4);	
+   \   0000003C   0xF44F 0x5000      MOV      R0,#+8192
+   \   00000040   0x.... 0x....      BL       DMA_ClearITPendingBit
+    356          		memset(uiSendbuf1, 0, SENDBUFF_SIZE);			/* 发送完成清零 */		
+   \   00000044   0x2200             MOVS     R2,#+0
+   \   00000046   0x2140             MOVS     R1,#+64
+   \   00000048   0x4620             MOV      R0,R4
+   \   0000004A   0x.... 0x....      BL       __aeabi_memset4
+    357          		BSP_USART1DMASEND_Init();						/* 依据网上说法：普通发送模式每次发送完成需要重新对DMA进行初始化 */
+   \   0000004E   0xE8BD 0x4031      POP      {R0,R4,R5,LR}
+   \   00000052   0x....             B.N      BSP_USART1DMASEND_Init
+    358          	}
+    359          }
+   \                     ??USART1DMA_Send_Data_0: (+1)
+   \   00000054   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    360          
+    361          /*
+    362          *********************************************************************************************************
+    363          *                                             NBiotDMA_Receive_Data()
+    364          *
+    365          * Description : Initialize the board's DMA
+    366          *
+    367          * Argument(s) : none.
+    368          *
+    369          * Return(s)   : none.
+    370          *
+    371          * Caller(s)   : BSP_Init().
+    372          *
+    373          * Note(s)     : none.
+    374          *********************************************************************************************************
+    375          */
+    376          
+
+   \                                 In section .text, align 2, keep-with-next
+    377          void NBiotDMA_Receive_Data(u8 *buffer)
+    378          {
+   \                     NBiotDMA_Receive_Data: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    379          	if(buffer != NULL)
+   \   00000004   0xD024             BEQ.N    ??NBiotDMA_Receive_Data_0
+    380          	{
+    381          		/* 启动DMA接收 */
+    382          		USART_DMACmd(USART2, USART_DMAReq_Rx, DISABLE);
+   \   00000006   0x....             LDR.N    R5,??DataTable11_10  ;; 0x40004400
+   \   00000008   0x2200             MOVS     R2,#+0
+   \   0000000A   0x2140             MOVS     R1,#+64
+   \   0000000C   0x4628             MOV      R0,R5
+   \   0000000E   0x.... 0x....      BL       USART_DMACmd
+    383          		BSP_USART2RXDMA_Init();
+   \   00000012   0x.... 0x....      BL       BSP_USART2RXDMA_Init
+    384          		USART_DMACmd(USART2, USART_DMAReq_Rx, ENABLE);
+   \   00000016   0x2201             MOVS     R2,#+1
+   \   00000018   0x2140             MOVS     R1,#+64
+   \   0000001A   0x4628             MOV      R0,R5
+   \   0000001C   0x.... 0x....      BL       USART_DMACmd
+    385          		/* 等待2S左右 */
+    386          		OSTimeDlyHMSM(0,0,2,0);
+   \   00000020   0x2300             MOVS     R3,#+0
+   \   00000022   0x2202             MOVS     R2,#+2
+   \   00000024   0x4619             MOV      R1,R3
+   \   00000026   0x4608             MOV      R0,R1
+   \   00000028   0x.... 0x....      BL       OSTimeDlyHMSM
+    387          		
+    388          		/* 填充到buff接收的数据 */
+    389          		memcpy((char *)buffer, (char *)uiReceivebuf, SENDBUFF_SIZE);
+   \   0000002C   0x....             LDR.N    R5,??DataTable11_7
+   \   0000002E   0x2240             MOVS     R2,#+64
+   \   00000030   0x4629             MOV      R1,R5
+   \   00000032   0x4620             MOV      R0,R4
+   \   00000034   0x.... 0x....      BL       __aeabi_memcpy
+    390          		debug_printf("NBiotDMA_Receive_Data：%s", uiReceivebuf);
+   \   00000038   0x4629             MOV      R1,R5
+   \   0000003A   0x.... 0x....      ADR.W    R0,?_1
+   \   0000003E   0x.... 0x....      BL       debug_printf
+    391          		/* 发送完成清零 */
+    392          		memset(uiReceivebuf, 0, SENDBUFF_SIZE);
+   \   00000042   0x2200             MOVS     R2,#+0
+   \   00000044   0x2140             MOVS     R1,#+64
+   \   00000046   0x4628             MOV      R0,R5
+   \   00000048   0xE8BD 0x4038      POP      {R3-R5,LR}
+   \   0000004C   0x.... 0x....      B.W      __aeabi_memset4
+    393          	}
+    394          }
+   \                     ??NBiotDMA_Receive_Data_0: (+1)
+   \   00000050   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    395          
+    396          /*
+    397          *********************************************************************************************************
+    398          *                                             USART1DMA_Receive_Data()
+    399          *
+    400          * Description : Initialize the board's DMA
+    401          *
+    402          * Argument(s) : none.
+    403          *
+    404          * Return(s)   : none.
+    405          *
+    406          * Caller(s)   : BSP_Init().
+    407          *
+    408          * Note(s)     : none.
+    409          *********************************************************************************************************
+    410          */
+
+   \                                 In section .text, align 2, keep-with-next
+    411          void USART1DMA_Receive_Data(u8 *buffer)
+    412          {
+   \                     USART1DMA_Receive_Data: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x0004             MOVS     R4,R0
+    413          	if(buffer != 0)
+   \   00000004   0xD01E             BEQ.N    ??USART1DMA_Receive_Data_0
+    414          	{
+    415          		/* 启动DMA接收 */
+    416          		USART_DMACmd(USART1, USART_DMAReq_Rx, DISABLE);
+   \   00000006   0x....             LDR.N    R5,??DataTable11_12  ;; 0x40013800
+   \   00000008   0x2200             MOVS     R2,#+0
+   \   0000000A   0x2140             MOVS     R1,#+64
+   \   0000000C   0x4628             MOV      R0,R5
+   \   0000000E   0x.... 0x....      BL       USART_DMACmd
+    417          		BSP_USART1RXDMA_Init();
+   \   00000012   0x.... 0x....      BL       BSP_USART1RXDMA_Init
+    418          		USART_DMACmd(USART1, USART_DMAReq_Rx, ENABLE);
+   \   00000016   0x2201             MOVS     R2,#+1
+   \   00000018   0x2140             MOVS     R1,#+64
+   \   0000001A   0x4628             MOV      R0,R5
+   \   0000001C   0x.... 0x....      BL       USART_DMACmd
+    419          		/* 等待通道7传输完成 */
+    420          		//while(DMA1_Channel5->CNDTR != 0);
+    421          		OSTimeDlyHMSM(0,0,0,10);
+   \   00000020   0x230A             MOVS     R3,#+10
+   \   00000022   0x2200             MOVS     R2,#+0
+   \   00000024   0x4611             MOV      R1,R2
+   \   00000026   0x4608             MOV      R0,R1
+   \   00000028   0x.... 0x....      BL       OSTimeDlyHMSM
+    422          		/* 填充将要发送的数据 */
+    423          		strcpy((char *)buffer, (char *)Uart1Receivebuf);
+   \   0000002C   0x....             LDR.N    R5,??DataTable11_9
+   \   0000002E   0x4629             MOV      R1,R5
+   \   00000030   0x4620             MOV      R0,R4
+   \   00000032   0x.... 0x....      BL       strcpy
+    424          		/* 发送完成清零 */
+    425          		memset(Uart1Receivebuf, 0, SENDBUFF_SIZE);
+   \   00000036   0x2200             MOVS     R2,#+0
+   \   00000038   0x2140             MOVS     R1,#+64
+   \   0000003A   0x4628             MOV      R0,R5
+   \   0000003C   0xE8BD 0x4038      POP      {R3-R5,LR}
+   \   00000040   0x.... 0x....      B.W      __aeabi_memset4
+    426          	}
+    427          }
+   \                     ??USART1DMA_Receive_Data_0: (+1)
+   \   00000044   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+    428          
+    429          /*
+    430          *********************************************************************************************************
+    431          *                                           BSP_ADC_GetVoltStatus(void)
+    432          *
+    433          * Description : This function initializes the board's ADC
+    434          *
+    435          * Argument(s) : adc             ID of the ADC to probe.  For this board, the only legitimate value is 1.
+    436          *
+    437          * Return(s)   : The numerator of the binary fraction representing the result of the latest ADC conversion.
+    438          *               This value will be a 12-bit value between 0x0000 and 0x0FFF, inclusive.
+    439          *
+    440          * Caller(s)   : Application.
+    441          *
+    442          * Note(s)     : none.
+    443          *********************************************************************************************************
+    444          */
+
+   \                                 In section .text, align 4, keep-with-next
+    445          void BSP_IntHandlerDMA1_CH4      (void)
+    446          {
+   \                     BSP_IntHandlerDMA1_CH4: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    447          	OS_CPU_SR  cpu_sr;
+    448              OS_ENTER_CRITICAL();                         /* Tell uC/OS-II that we are starting an ISR          */
+   \   00000002   0x.... 0x....      BL       OS_CPU_SR_Save
+    449              OSIntNesting++;
+   \   00000006   0x....             LDR.N    R1,??DataTable11_14
+   \   00000008   0x780A             LDRB     R2,[R1, #+0]
+   \   0000000A   0x1C52             ADDS     R2,R2,#+1
+   \   0000000C   0x700A             STRB     R2,[R1, #+0]
+    450              OS_EXIT_CRITICAL();
+   \   0000000E   0x.... 0x....      BL       OS_CPU_SR_Restore
+    451          	if(DMA_GetITStatus(DMA1_IT_TC4))
+   \   00000012   0xF44F 0x5000      MOV      R0,#+8192
+   \   00000016   0x.... 0x....      BL       DMA_GetITStatus
+   \   0000001A   0x2800             CMP      R0,#+0
+   \   0000001C   0xD012             BEQ.N    ??BSP_IntHandlerDMA1_CH4_0
+    452              {
+    453              	if(GETUSART_MODE() == EN_USART_RS485)	/* 判断串口模式是RS232还是RS485 */
+   \   0000001E   0x.... 0x....      BL       GETUSART_MODE
+   \   00000022   0x2800             CMP      R0,#+0
+   \   00000024   0xD104             BNE.N    ??BSP_IntHandlerDMA1_CH4_1
+    454                 		ENRS485_RX;							/* 发送完成中断后打开RS485的接收模式 */
+   \   00000026   0xF44F 0x7180      MOV      R1,#+256
+   \   0000002A   0x....             LDR.N    R0,??DataTable11_15  ;; 0x40010800
+   \   0000002C   0x.... 0x....      BL       GPIO_ResetBits
+    455          		//Beep_output_time(100);				/* 测试 */
+    456          		OSTimeDlyHMSM(0,0,0,100);				/* 使能接收后需要延迟10ms */
+   \                     ??BSP_IntHandlerDMA1_CH4_1: (+1)
+   \   00000030   0x2364             MOVS     R3,#+100
+   \   00000032   0x2200             MOVS     R2,#+0
+   \   00000034   0x4611             MOV      R1,R2
+   \   00000036   0x4608             MOV      R0,R1
+   \   00000038   0x.... 0x....      BL       OSTimeDlyHMSM
+    457                  DMA_ClearITPendingBit(DMA1_IT_GL4); 	/* 清除全部中断标志 */
+   \   0000003C   0xF44F 0x5080      MOV      R0,#+4096
+   \   00000040   0x.... 0x....      BL       DMA_ClearITPendingBit
+    458              }
+    459          	OSIntExit(); 
+   \                     ??BSP_IntHandlerDMA1_CH4_0: (+1)
+   \   00000044   0xE8BD 0x4001      POP      {R0,LR}
+   \   00000048   0x.... 0x....      B.W      OSIntExit
+    460          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11:
+   \   00000000   0x40020080         DC32     0x40020080
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_1:
+   \   00000000   0x40004404         DC32     0x40004404
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_2:
+   \   00000000   0x........         DC32     uiSendbuf
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_3:
+   \   00000000   0x40020044         DC32     0x40020044
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_4:
+   \   00000000   0x40013804         DC32     0x40013804
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_5:
+   \   00000000   0x........         DC32     uiSendbuf1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_6:
+   \   00000000   0x4002006C         DC32     0x4002006c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_7:
+   \   00000000   0x........         DC32     uiReceivebuf
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_8:
+   \   00000000   0x40020058         DC32     0x40020058
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_9:
+   \   00000000   0x........         DC32     Uart1Receivebuf
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_10:
+   \   00000000   0x40004400         DC32     0x40004400
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_11:
+   \   00000000   0x40020084         DC32     0x40020084
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_12:
+   \   00000000   0x40013800         DC32     0x40013800
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_13:
+   \   00000000   0x40020048         DC32     0x40020048
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_14:
+   \   00000000   0x........         DC32     OSIntNesting
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable11_15:
+   \   00000000   0x40010800         DC32     0x40010800
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x44 0x4D          DC8 "DMA:%s\015\012"
+   \              0x41 0x3A    
+   \              0x25 0x73    
+   \              0x0D 0x0A    
+   \              0x00         
+   \   00000009   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_1:
+   \   00000000   0x4E 0x42          DC8 "NBiotDMA_Receive_Data\243\272%s"
+   \              0x69 0x6F    
+   \              0x74 0x44    
+   \              0x4D 0x41    
+   \              0x5F 0x52    
+   \              0x65 0x63    
+   \              0x65 0x69    
+   \              0x76 0x65    
+   \              0x5F 0x44    
+   \              0x61 0x74    
+   \              0x61 0xA3    
+   \              0xBA 0x25    
+   \              0x73 0x00    
+   \   0000001A   0x00 0x00          DC8 0, 0
+    461          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   BSP_DMA_Init
+         8   -> BSP_USART1DMASEND_Init
+         8   -> BSP_USART1RXDMA_Init
+         8   -> BSP_USART2DMASEND_Init
+         8   -> BSP_USART2RXDMA_Init
+         0   -> DMANVIC_Configuration
+       8   BSP_IntHandlerDMA1_CH4
+         8   -> DMA_ClearITPendingBit
+         8   -> DMA_GetITStatus
+         8   -> GETUSART_MODE
+         8   -> GPIO_ResetBits
+         0   -> OSIntExit
+         8   -> OSTimeDlyHMSM
+         8   -> OS_CPU_SR_Restore
+         8   -> OS_CPU_SR_Save
+      56   BSP_USART1DMASEND_Init
+        56   -> DMA_Cmd
+        56   -> DMA_DeInit
+        56   -> DMA_ITConfig
+        56   -> DMA_Init
+      56   BSP_USART1RXDMA_Init
+        56   -> DMA_Cmd
+        56   -> DMA_DeInit
+        56   -> DMA_Init
+      56   BSP_USART2DMASEND_Init
+        56   -> DMA_Cmd
+        56   -> DMA_DeInit
+        56   -> DMA_Init
+      56   BSP_USART2RXDMA_Init
+        56   -> DMA_Cmd
+        56   -> DMA_DeInit
+        56   -> DMA_Init
+       8   DMANVIC_Configuration
+         8   -> BSP_IntEn
+         8   -> BSP_IntVectSet
+         8   -> NVIC_Init
+         8   -> NVIC_PriorityGroupConfig
+      16   LoRaDMA_Send_Data
+        16   -> DMA_ClearITPendingBit
+        16   -> USART_DMACmd
+        16   -> __aeabi_memcpy
+        16   -> __aeabi_memset4
+        16   -> debug_printf
+        16   -> strlen
+      16   NBiotDMA_Receive_Data
+        16   -> BSP_USART2RXDMA_Init
+        16   -> OSTimeDlyHMSM
+        16   -> USART_DMACmd
+        16   -> __aeabi_memcpy
+        16   -> debug_printf
+      16   NBiotDMA_Send_Data
+        16   -> DMA_ClearITPendingBit
+        16   -> USART_DMACmd
+        16   -> __aeabi_memcpy
+        16   -> __aeabi_memset4
+        16   -> debug_printf
+        16   -> strlen
+      16   USART1DMA_Receive_Data
+        16   -> BSP_USART1RXDMA_Init
+        16   -> OSTimeDlyHMSM
+        16   -> USART_DMACmd
+        16   -> strcpy
+      16   USART1DMA_Send_Data
+        16   -> DMA_ClearITPendingBit
+        16   -> OSTimeDlyHMSM
+        16   -> USART_DMACmd
+        16   -> __aeabi_memcpy
+        16   -> __aeabi_memset4
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable11
+       4  ??DataTable11_1
+       4  ??DataTable11_10
+       4  ??DataTable11_11
+       4  ??DataTable11_12
+       4  ??DataTable11_13
+       4  ??DataTable11_14
+       4  ??DataTable11_15
+       4  ??DataTable11_2
+       4  ??DataTable11_3
+       4  ??DataTable11_4
+       4  ??DataTable11_5
+       4  ??DataTable11_6
+       4  ??DataTable11_7
+       4  ??DataTable11_8
+       4  ??DataTable11_9
+      12  ?_0
+      28  ?_1
+     160  ADCConvertedValue
+      24  BSP_DMA_Init
+      76  BSP_IntHandlerDMA1_CH4
+      84  BSP_USART1DMASEND_Init
+      74  BSP_USART1RXDMA_Init
+      76  BSP_USART2DMASEND_Init
+      74  BSP_USART2RXDMA_Init
+      54  DMANVIC_Configuration
+      90  LoRaDMA_Send_Data
+      82  NBiotDMA_Receive_Data
+      90  NBiotDMA_Send_Data
+      70  USART1DMA_Receive_Data
+      86  USART1DMA_Send_Data
+      64  Uart1Receivebuf
+     512  uiReceivebuf
+     512  uiSendbuf
+      64  uiSendbuf1
+
+ 
+ 1 312 bytes in section .bss
+   984 bytes in section .text
+ 
+   984 bytes of CODE memory
+ 1 312 bytes of DATA memory
+
+Errors: none
+Warnings: 1

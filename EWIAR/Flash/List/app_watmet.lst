@@ -1,0 +1,499 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:38
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_watmet.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_watmet.c
+#        -D LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\app_watmet.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\app_watmet.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_watmet.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  app_watmet.c
+      3            * @author  walle
+      4            * @version  V1.0.0
+      5            * @date  08/06/2019
+      6            * @brief  水表传感器接口
+      7            */ 
+      8          
+      9          
+     10          #include "bsp.h"
+     11          #include "app_modbus.h"
+     12          #include "bsp_modbus.h"
+     13          #include "app_uart.h"
+     14          #include "app_modbus.h"
+     15          #include "bsp_uart.h"
+     16          #include "app_uart.h"
+     17          #include "bsp_dma.h"
+     18          #include "app_nbiot.h"
+     19          #include "app_watmet.h"
+     20          
+     21          
+     22          #define READSTAR_ADDR 0x0000									/* 读寄存器起始地址 */
+     23          #define GATESTAR_ADDR 0x0001									/* 开关阀门控制的起始地址 */
+     24          #define WATMET_ADDRESS 0x69 									/* 宏定义水表的地址 */
+
+   \                                 In section .bss, align 4
+     25          static ST_WATMET_PACK st_ModuleBusPack_Watmet = {0};			/* 水表ModuleBusPackWatmet协议数据结构体 */
+   \                     st_ModuleBusPack_Watmet:
+   \   00000000                      DS8 12
+     26          
+     27          
+     28          /**
+     29            * @brief  水表初始化
+     30           */
+
+   \                                 In section .text, align 2, keep-with-next
+     31          void Watmet_Init(void)
+     32          {
+   \                     Watmet_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+     33          	u8 WatMetRcv = 0;
+     34          	OPENRS_485;
+   \   00000002   0x....             LDR.N    R4,??DataTable6  ;; 0x40010c00
+   \   00000004   0x2140             MOVS     R1,#+64
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       GPIO_SetBits
+   \   0000000C   0x2120             MOVS     R1,#+32
+   \   0000000E   0x4620             MOV      R0,R4
+   \   00000010   0x.... 0x....      BL       GPIO_ResetBits
+   \   00000014   0x2000             MOVS     R0,#+0
+   \   00000016   0x.... 0x....      BL       SetUSART_MODE
+     35          	/* 打开阀门 */
+     36          	CreatModBusPackWithSend(&st_ModuleBusPack_Watmet, EN_FUNCODE_CTLGATE, GATESTAR_ADDR, EN_VALUE_OFF);
+   \   0000001A   0x....             LDR.N    R4,??DataTable6_1
+   \   0000001C   0x2300             MOVS     R3,#+0
+   \   0000001E   0x2201             MOVS     R2,#+1
+   \   00000020   0x2105             MOVS     R1,#+5
+   \   00000022   0x4620             MOV      R0,R4
+   \   00000024   0x.... 0x....      BL       CreatModBusPackWithSend
+     37          	WatMetRcv = WatmetRecv(&st_ModuleBusPack_Watmet);
+     38          	if(WatMetRcv == EN_VALUE_ON)
+   \   00000028   0x4620             MOV      R0,R4
+   \   0000002A   0x.... 0x....      BL       WatmetRecv
+   \   0000002E   0x28FF             CMP      R0,#+255
+   \   00000030   0xD105             BNE.N    ??Watmet_Init_0
+     39          	{
+     40          		debug_printf("Watmet Init Success\r\n");
+   \   00000032   0x.... 0x....      ADR.W    R0,?_0
+   \   00000036   0xE8BD 0x4010      POP      {R4,LR}
+   \   0000003A   0x.... 0x....      B.W      debug_printf
+     41          	}
+     42          }
+   \                     ??Watmet_Init_0: (+1)
+   \   0000003E   0xBD10             POP      {R4,PC}          ;; return
+     43          
+     44          /**
+     45            * @brief  水表用水量
+     46           */
+
+   \                                 In section .text, align 2, keep-with-next
+     47          void Watmet_Read(void)
+     48          {
+   \                     Watmet_Read: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB082             SUB      SP,SP,#+8
+     49          	u8 WatMetRcv = 0;
+     50          	u8 WatmetData[4] = {0};
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x2100             MOVS     R1,#+0
+   \   00000008   0x6001             STR      R1,[R0, #+0]
+     51          	/* 读用水量 */
+     52          	CreatModBusPackWithSend(&st_ModuleBusPack_Watmet, EN_FUNCODE_READREG, READSTAR_ADDR, EN_USED_WATER);
+   \   0000000A   0x....             LDR.N    R4,??DataTable6_1
+   \   0000000C   0x2302             MOVS     R3,#+2
+   \   0000000E   0x460A             MOV      R2,R1
+   \   00000010   0x2103             MOVS     R1,#+3
+   \   00000012   0x4620             MOV      R0,R4
+   \   00000014   0x.... 0x....      BL       CreatModBusPackWithSend
+     53          	WatMetRcv = WatmetRecv(&st_ModuleBusPack_Watmet);
+   \   00000018   0x4620             MOV      R0,R4
+   \   0000001A   0x.... 0x....      BL       WatmetRecv
+   \   0000001E   0x4601             MOV      R1,R0
+     54          	if(WatMetRcv == 0x04)
+   \   00000020   0x2904             CMP      R1,#+4
+   \   00000022   0xD10A             BNE.N    ??Watmet_Read_0
+     55          	{
+     56          		WatmetData[0] = st_ModuleBusPack_Watmet.ucStarAdd_H;
+   \   00000024   0x78E0             LDRB     R0,[R4, #+3]
+   \   00000026   0xF88D 0x0000      STRB     R0,[SP, #+0]
+     57          		WatmetData[1] = st_ModuleBusPack_Watmet.ucStarAdd_L;
+   \   0000002A   0x7920             LDRB     R0,[R4, #+4]
+   \   0000002C   0xF88D 0x0001      STRB     R0,[SP, #+1]
+     58          		WatmetData[2] = st_ModuleBusPack_Watmet.ucRegData_H;
+   \   00000030   0xA800             ADD      R0,SP,#+0
+   \   00000032   0x7962             LDRB     R2,[R4, #+5]
+   \   00000034   0x7082             STRB     R2,[R0, #+2]
+     59          		WatmetData[3] = st_ModuleBusPack_Watmet.ucRegData_L;
+   \   00000036   0x79A2             LDRB     R2,[R4, #+6]
+   \   00000038   0x70C2             STRB     R2,[R0, #+3]
+     60          	}
+     61          	/* 发送写卡数据到NBIOT平台 */;
+     62          	GropPackNBMsgSend(WatmetData, WatMetRcv, 0x00);
+   \                     ??Watmet_Read_0: (+1)
+   \   0000003A   0x2200             MOVS     R2,#+0
+   \   0000003C   0xA800             ADD      R0,SP,#+0
+   \   0000003E   0x.... 0x....      BL       GropPackNBMsgSend
+     63          }
+   \   00000042   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+     64          
+     65          /**
+     66            * @brief  水表回应
+     67           */
+
+   \                                 In section .text, align 2, keep-with-next
+     68          u8 WatmetRecv(PST_WATMET_PACK pst_ModBusPack_Watmet)
+     69          {
+   \                     WatmetRecv: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB09A             SUB      SP,SP,#+104
+   \   00000004   0x4604             MOV      R4,R0
+     70          	static u8 Timeout = 200;	
+     71          	u8 UsartSensorData[100] = {0};								/* 传感器接收串口数据数组 */
+   \   00000006   0xA800             ADD      R0,SP,#+0
+   \   00000008   0x2164             MOVS     R1,#+100
+   \   0000000A   0x.... 0x....      BL       __aeabi_memclr4
+     72          	u32 ulReceiveLen = 0;										/* 保存的接收数据长度 */
+     73          	while(Timeout --)
+   \                     ??WatmetRecv_0: (+1)
+   \   0000000E   0x....             LDR.N    R0,??DataTable6_2
+   \   00000010   0x7801             LDRB     R1,[R0, #+0]
+   \   00000012   0x1E4A             SUBS     R2,R1,#+1
+   \   00000014   0x7002             STRB     R2,[R0, #+0]
+   \   00000016   0x2900             CMP      R1,#+0
+   \   00000018   0xD009             BEQ.N    ??WatmetRecv_1
+     74          	{
+     75          		ulReceiveLen = Uart1RecvData((u8*)UsartSensorData);		/* 接收串口1传过来的数据 */
+     76          		if(ulReceiveLen > 0)	/* 如果接收到数据 */
+   \   0000001A   0xA800             ADD      R0,SP,#+0
+   \   0000001C   0x.... 0x....      BL       Uart1RecvData
+   \   00000020   0x2800             CMP      R0,#+0
+   \   00000022   0xD0F4             BEQ.N    ??WatmetRecv_0
+     77          		{
+     78          			return WatmetRecvAnalysis(pst_ModBusPack_Watmet, UsartSensorData);
+   \   00000024   0xA900             ADD      R1,SP,#+0
+   \   00000026   0x4620             MOV      R0,R4
+   \   00000028   0x.... 0x....      BL       WatmetRecvAnalysis
+   \   0000002C   0xE000             B.N      ??WatmetRecv_2
+     79          		}
+     80          	}
+     81          	return -1;
+   \                     ??WatmetRecv_1: (+1)
+   \   0000002E   0x20FF             MOVS     R0,#+255
+   \                     ??WatmetRecv_2: (+1)
+   \   00000030   0xB01A             ADD      SP,SP,#+104
+   \   00000032   0xBD10             POP      {R4,PC}          ;; return
+     82          }
+
+   \                                 In section .data, align 1
+   \                     ??Timeout:
+   \   00000000   0xC8               DC8 200
+     83          
+     84          /**
+     85            * @brief  水表接收数据解析
+     86           */
+
+   \                                 In section .text, align 2, keep-with-next
+     87          u8 WatmetRecvAnalysis(PST_WATMET_PACK pst_ModBusPack_Watmet, u8 *RecvData)
+     88          {
+     89          	pst_ModBusPack_Watmet->ucADDRCODE = RecvData[0];
+   \                     WatmetRecvAnalysis: (+1)
+   \   00000000   0x780A             LDRB     R2,[R1, #+0]
+   \   00000002   0x7002             STRB     R2,[R0, #+0]
+     90          	pst_ModBusPack_Watmet->ucFUNCODE = RecvData[1];
+   \   00000004   0x784A             LDRB     R2,[R1, #+1]
+   \   00000006   0x7042             STRB     R2,[R0, #+1]
+     91          	if(pst_ModBusPack_Watmet->ucFUNCODE == EN_FUNCODE_CTLGATE)/* 如果返回的是控制阀门命令 */
+   \   00000008   0x788B             LDRB     R3,[R1, #+2]
+   \   0000000A   0x2A05             CMP      R2,#+5
+   \   0000000C   0xD108             BNE.N    ??WatmetRecvAnalysis_0
+     92          	{
+     93          		pst_ModBusPack_Watmet->ucStarAdd_H = RecvData[2];
+   \   0000000E   0x70C3             STRB     R3,[R0, #+3]
+     94          		pst_ModBusPack_Watmet->ucStarAdd_L = RecvData[3];
+   \   00000010   0x78CA             LDRB     R2,[R1, #+3]
+   \   00000012   0x7102             STRB     R2,[R0, #+4]
+     95          		pst_ModBusPack_Watmet->ucRegData_H = RecvData[4];
+   \   00000014   0x790A             LDRB     R2,[R1, #+4]
+   \   00000016   0x7142             STRB     R2,[R0, #+5]
+     96          		pst_ModBusPack_Watmet->ucRegData_L = RecvData[5];
+   \   00000018   0x7949             LDRB     R1,[R1, #+5]
+   \   0000001A   0x7181             STRB     R1,[R0, #+6]
+     97          		return pst_ModBusPack_Watmet->ucRegData_L;			/* 返回 */
+   \   0000001C   0x4608             MOV      R0,R1
+   \   0000001E   0x4770             BX       LR
+     98          	}
+     99          	else
+    100          	{
+    101          		pst_ModBusPack_Watmet->ucDataSize = RecvData[2];
+   \                     ??WatmetRecvAnalysis_0: (+1)
+   \   00000020   0x7083             STRB     R3,[R0, #+2]
+    102          		pst_ModBusPack_Watmet->ucStarAdd_H = RecvData[3];
+   \   00000022   0x78CA             LDRB     R2,[R1, #+3]
+   \   00000024   0x70C2             STRB     R2,[R0, #+3]
+    103          		pst_ModBusPack_Watmet->ucStarAdd_L = RecvData[4];
+   \   00000026   0x790A             LDRB     R2,[R1, #+4]
+   \   00000028   0x7102             STRB     R2,[R0, #+4]
+    104          		pst_ModBusPack_Watmet->ucWrittingData_H = RecvData[5];
+   \   0000002A   0x794A             LDRB     R2,[R1, #+5]
+   \   0000002C   0x7202             STRB     R2,[R0, #+8]
+    105          		pst_ModBusPack_Watmet->ucWrittingData_L = RecvData[6];
+   \   0000002E   0x7989             LDRB     R1,[R1, #+6]
+   \   00000030   0x7241             STRB     R1,[R0, #+9]
+    106          		return pst_ModBusPack_Watmet->ucDataSize;
+   \   00000032   0x7880             LDRB     R0,[R0, #+2]
+   \   00000034   0x4770             BX       LR               ;; return
+    107          	}
+    108          }
+    109          
+    110          
+    111          /**
+    112            * @brief 组包
+    113           */
+
+   \                                 In section .text, align 2, keep-with-next
+    114          void CreatModBusPackWithSend(PST_WATMET_PACK pst_ModBusPack_Watmet, u8 FuCode, u16 StartAdr, u16 RegData)
+    115          {
+   \                     CreatModBusPackWithSend: (+1)
+   \   00000000   0xB57C             PUSH     {R2-R6,LR}
+    116          	u8 ModBusSendBuf[0x08] = {0};
+   \   00000002   0xAC00             ADD      R4,SP,#+0
+   \   00000004   0x2500             MOVS     R5,#+0
+   \   00000006   0x462E             MOV      R6,R5
+   \   00000008   0xC460             STM      R4!,{R5,R6}
+    117          	u16 ModBusCRC = 0;
+    118          	pst_ModBusPack_Watmet->ucADDRCODE 	= WATMET_ADDRESS;			/* 地址采用测试水表使用0x69 */
+   \   0000000A   0x2469             MOVS     R4,#+105
+   \   0000000C   0x7004             STRB     R4,[R0, #+0]
+    119          	pst_ModBusPack_Watmet->ucFUNCODE 	= FuCode;					/* 功能码 */
+   \   0000000E   0x7041             STRB     R1,[R0, #+1]
+    120          	pst_ModBusPack_Watmet->ucStarAdd_H 	= (StartAdr & 0xF0) >> 8;
+   \   00000010   0x4629             MOV      R1,R5
+   \   00000012   0x70C1             STRB     R1,[R0, #+3]
+    121          	pst_ModBusPack_Watmet->ucStarAdd_L 	= StartAdr & 0x0F;
+   \   00000014   0xF002 0x010F      AND      R1,R2,#0xF
+   \   00000018   0x7101             STRB     R1,[R0, #+4]
+    122          	pst_ModBusPack_Watmet->ucRegData_H 	= (RegData & 0xF0) >> 8;
+   \   0000001A   0x4629             MOV      R1,R5
+   \   0000001C   0x7141             STRB     R1,[R0, #+5]
+    123          	pst_ModBusPack_Watmet->ucRegData_L 	= RegData & 0x0F;
+   \   0000001E   0xF003 0x010F      AND      R1,R3,#0xF
+   \   00000022   0x7181             STRB     R1,[R0, #+6]
+    124          	
+    125          	ModBusSendBuf[0] = pst_ModBusPack_Watmet->ucADDRCODE;
+   \   00000024   0x7801             LDRB     R1,[R0, #+0]
+   \   00000026   0xF88D 0x1000      STRB     R1,[SP, #+0]
+    126          	ModBusSendBuf[1] = pst_ModBusPack_Watmet->ucFUNCODE;
+   \   0000002A   0xAC00             ADD      R4,SP,#+0
+   \   0000002C   0x7841             LDRB     R1,[R0, #+1]
+   \   0000002E   0x7061             STRB     R1,[R4, #+1]
+    127          	ModBusSendBuf[2] = pst_ModBusPack_Watmet->ucStarAdd_H;
+   \   00000030   0x78C1             LDRB     R1,[R0, #+3]
+   \   00000032   0xF88D 0x1002      STRB     R1,[SP, #+2]
+    128          	ModBusSendBuf[3] = pst_ModBusPack_Watmet->ucStarAdd_L;
+   \   00000036   0x7901             LDRB     R1,[R0, #+4]
+   \   00000038   0x70E1             STRB     R1,[R4, #+3]
+    129          	ModBusSendBuf[4] = pst_ModBusPack_Watmet->ucRegData_H;
+   \   0000003A   0x7941             LDRB     R1,[R0, #+5]
+   \   0000003C   0x7121             STRB     R1,[R4, #+4]
+    130          	ModBusSendBuf[5] = pst_ModBusPack_Watmet->ucRegData_L;
+   \   0000003E   0x7980             LDRB     R0,[R0, #+6]
+   \   00000040   0x7160             STRB     R0,[R4, #+5]
+    131          
+    132          	ModBusCRC = CRC16_Modbus(ModBusSendBuf, 0x06);				/* 计算CRC校验码 */
+   \   00000042   0x2106             MOVS     R1,#+6
+   \   00000044   0xA800             ADD      R0,SP,#+0
+   \   00000046   0x.... 0x....      BL       CRC16_Modbus
+    133          	ModBusSendBuf[6] = ModBusCRC >> 8;
+   \   0000004A   0x1201             ASRS     R1,R0,#+8
+   \   0000004C   0x71A1             STRB     R1,[R4, #+6]
+    134          	ModBusSendBuf[7] = ModBusCRC;
+   \   0000004E   0xF88D 0x0007      STRB     R0,[SP, #+7]
+    135          
+    136          	ModBusSendPack(ModBusSendBuf, 0x08);						/* 发送数据包 */
+   \   00000052   0x2108             MOVS     R1,#+8
+   \   00000054   0xA800             ADD      R0,SP,#+0
+   \   00000056   0x.... 0x....      BL       ModBusSendPack
+    137          }
+   \   0000005A   0xBD73             POP      {R0,R1,R4-R6,PC}  ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable6:
+   \   00000000   0x40010C00         DC32     0x40010c00
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable6_1:
+   \   00000000   0x........         DC32     st_ModuleBusPack_Watmet
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable6_2:
+   \   00000000   0x........         DC32     ??Timeout
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x57 0x61          DC8 "Watmet Init Success\015\012"
+   \              0x74 0x6D    
+   \              0x65 0x74    
+   \              0x20 0x49    
+   \              0x6E 0x69    
+   \              0x74 0x20    
+   \              0x53 0x75    
+   \              0x63 0x63    
+   \              0x65 0x73    
+   \              0x73 0x0D    
+   \              0x0A 0x00    
+   \   00000016   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     ?_1:
+   \   00000000   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     ?_2:
+   \   00000000   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+   \   00000017   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+   \   0000002E   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+   \   00000045   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+   \   0000005C   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     ?_3:
+   \   00000000   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+    138          
+    139          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   CreatModBusPackWithSend
+        24   -> CRC16_Modbus
+        24   -> ModBusSendPack
+     112   WatmetRecv
+       112   -> Uart1RecvData
+       112   -> WatmetRecvAnalysis
+       112   -> __aeabi_memclr4
+       0   WatmetRecvAnalysis
+       8   Watmet_Init
+         8   -> CreatModBusPackWithSend
+         8   -> GPIO_ResetBits
+         8   -> GPIO_SetBits
+         8   -> SetUSART_MODE
+         8   -> WatmetRecv
+      16   Watmet_Read
+        16   -> CreatModBusPackWithSend
+        16   -> GropPackNBMsgSend
+        16   -> WatmetRecv
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable6
+       4  ??DataTable6_1
+       4  ??DataTable6_2
+      24  ?_0
+       4  ?_1
+     100  ?_2
+       8  ?_3
+      92  CreatModBusPackWithSend
+       1  Timeout
+      52  WatmetRecv
+      54  WatmetRecvAnalysis
+      64  Watmet_Init
+      68  Watmet_Read
+      12  st_ModuleBusPack_Watmet
+
+ 
+  12 bytes in section .bss
+   1 byte  in section .data
+ 112 bytes in section .rodata
+ 366 bytes in section .text
+ 
+ 366 bytes of CODE  memory
+ 112 bytes of CONST memory
+  13 bytes of DATA  memory
+
+Errors: none
+Warnings: none

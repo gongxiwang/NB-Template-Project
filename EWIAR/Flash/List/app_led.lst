@@ -1,0 +1,133 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:38
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_led.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_led.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\app_led.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\app_led.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_led.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  App_Light.c
+      3            * @author  netfire.liang
+      4            * @version  V2.0.0
+      5            * @date  08/01/2013
+      6            * @brief  用户LED灯接口
+      7            */ 
+      8          #include "app_cfg.h"
+      9          #include "app_led.h"
+     10          #include "app_uart.h"
+     11          #include "app_beep.h"
+     12          #include "bsp.h"
+     13          #include "bsp_led.h"
+     14          
+     15          
+     16          
+     17          /**
+     18            * @brief  LED灯主任务
+     19           */
+
+   \                                 In section .text, align 2, keep-with-next
+     20          void App_LED_TASK(void *pdata)
+     21          {
+   \                     App_LED_TASK: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+     22          	debug_printf( "[%s] enter.\r\n", __func__ );
+   \   00000002   0x.... 0x....      ADR.W    R1,??__func__
+   \   00000006   0x.... 0x....      ADR.W    R0,?_0
+   \   0000000A   0x.... 0x....      BL       debug_printf
+   \   0000000E   0x....             LDR.N    R4,??DataTable2  ;; 0x40010c00
+     23          	while(1)
+     24          	{
+     25          		OSTimeDly(500);/* 切换任务 */
+   \                     ??App_LED_TASK_0: (+1)
+   \   00000010   0xF44F 0x70FA      MOV      R0,#+500
+   \   00000014   0x.... 0x....      BL       OSTimeDly
+     26          		GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+   \   00000018   0x2101             MOVS     R1,#+1
+   \   0000001A   0x4620             MOV      R0,R4
+   \   0000001C   0x.... 0x....      BL       GPIO_ResetBits
+     27          		OSTimeDly(500);/* 切换任务 */
+   \   00000020   0xF44F 0x70FA      MOV      R0,#+500
+   \   00000024   0x.... 0x....      BL       OSTimeDly
+     28          		GPIO_SetBits(GPIOB, GPIO_Pin_0);
+   \   00000028   0x2101             MOVS     R1,#+1
+   \   0000002A   0x4620             MOV      R0,R4
+   \   0000002C   0x.... 0x....      BL       GPIO_SetBits
+   \   00000030   0xE7EE             B.N      ??App_LED_TASK_0
+     29          	}
+     30          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x40010C00         DC32     0x40010c00
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x5B 0x25          DC8 "[%s] enter.\015\012"
+   \              0x73 0x5D    
+   \              0x20 0x65    
+   \              0x6E 0x74    
+   \              0x65 0x72    
+   \              0x2E 0x0D    
+   \              0x0A 0x00    
+   \   0000000E   0x00 0x00          DC8 0, 0
+     31          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   App_LED_TASK
+         8   -> GPIO_ResetBits
+         8   -> GPIO_SetBits
+         8   -> OSTimeDly
+         8   -> debug_printf
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+      16  ?_0
+      50  App_LED_TASK
+      16  -- Other
+
+ 
+ 86 bytes in section .text
+ 
+ 86 bytes of CODE memory
+
+Errors: none
+Warnings: none

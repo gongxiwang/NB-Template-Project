@@ -1,0 +1,774 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:37
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_adc.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_adc.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\app_adc.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\app_adc.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\APP\app_adc.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  App_adc.c
+      3            * @author  walle
+      4            * @version  V1.0.0
+      5            * @date  28/05/2019
+      6            * @brief  ADC任务处理
+      7            */ 
+      8          
+      9          #include "app_adc.h"
+     10          #include "app_uart.h"
+     11          #include "app_beep.h"
+     12          #include "app_cfg.h"
+     13          #include "bsp.h"
+     14          #include "bsp_adc.h"
+     15          
+     16          /**
+     17            * @brief 全局静态ADC存储转换值
+     18           */
+
+   \                                 In section .bss, align 2
+     19          static vu16 ADC1ConvertedValue;
+   \                     ADC1ConvertedValue:
+   \   00000000                      DS8 2
+     20          
+     21          
+     22          /**
+     23            * @brief ADC_TASK任务函数
+     24           */
+
+   \                                 In section .text, align 2, keep-with-next
+     25          void App_ADC_TASK(void)
+     26          {
+   \                     App_ADC_TASK: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     27          	u16 curADCSampleValue = 0;
+     28          	debug_printf( "[%s] enter.\r\n", __func__ );	/* debug */
+   \   00000002   0x.... 0x....      ADR.W    R1,??__func__
+   \   00000006   0x.... 0x....      ADR.W    R0,?_0
+   \   0000000A   0x.... 0x....      BL       debug_printf
+     29          	CTRL_ADC_CUR;/* 打开电流检测 */
+   \   0000000E   0x2180             MOVS     R1,#+128
+   \   00000010   0x....             LDR.N    R0,??DataTable7  ;; 0x40010c00
+   \   00000012   0x.... 0x....      BL       GPIO_SetBits
+     30          	while(1)
+     31          	{
+     32          
+     33          #if 0
+     34          		curADCSampleValue = APP_GetCSF11(ADC_SAMPLE_CURCHANNEL);
+     35          		
+     36          		debug_printf("curADCSampleValue = %d\r\n", curADCSampleValue);
+     37          #endif
+     38          	OSTimeDlyHMSM(0, 0, 0, 1);					/* 系统任务切换 */
+   \                     ??App_ADC_TASK_0: (+1)
+   \   00000016   0x2301             MOVS     R3,#+1
+   \   00000018   0x2200             MOVS     R2,#+0
+   \   0000001A   0x4611             MOV      R1,R2
+   \   0000001C   0x4608             MOV      R0,R1
+   \   0000001E   0x.... 0x....      BL       OSTimeDlyHMSM
+   \   00000022   0xE7F8             B.N      ??App_ADC_TASK_0
+     39          	}
+     40          }
+     41          
+     42          
+     43          /*****************************************************************
+     44          *    Function Name           :   Megre
+     45          *
+     46          *    Parameters              :   u16 *P    Array to be sorted
+     47          *                                u16 *Q    Sort Results
+     48          *                                low       Left out of the starting unit
+     49          *                                mid       Right out of the starting unit
+     50          *                                high      the unit behind the right sub-column
+     51          *    Description             :   该函数为归并排序的内层算法,具体算法
+     52          *                                解释请参考 嵌入式系统软件设计中的常用算法
+     53          *                                周航慈 著  北京航空航天大学出版社
+     54          *
+     55          *    Returns                 :
+     56          *
+     57          *    Global Variable         :
+     58          *    File Static Variable    :
+     59          *    Function Static Variable:
+     60          *----------------------------------------------------------------
+     61          *    Revision History
+     62          *    No.    Date        Revised by        Item        Description
+     63          *
+     64          *****************************************************************/
+     65          
+
+   \                                 In section .text, align 2, keep-with-next
+     66          static void Megre(u16 *P,u16 *Q,u16 low,u16 mid, u16 high)
+     67          {
+   \                     Megre: (+1)
+   \   00000000   0xB5F0             PUSH     {R4-R7,LR}
+     68              u16 i,j,k;
+     69          
+     70              i = low; 
+     71              j = mid;
+   \   00000002   0x461D             MOV      R5,R3
+     72              k = low;
+   \   00000004   0x4616             MOV      R6,R2
+   \   00000006   0x9C05             LDR      R4,[SP, #+20]
+   \   00000008   0xE004             B.N      ??Megre_0
+     73          
+     74              while((i<mid)&&(j<high)) 
+     75              {
+     76                  if(P[i]<=P[j])
+     77                  {
+     78                      Q[k++] = P[i++];
+   \                     ??Megre_1: (+1)
+   \   0000000A   0xF821 0x7016      STRH     R7,[R1, R6, LSL #+1]
+   \   0000000E   0x1C52             ADDS     R2,R2,#+1
+   \   00000010   0xB292             UXTH     R2,R2
+   \   00000012   0x4666             MOV      R6,R12
+     79                  }
+   \                     ??Megre_0: (+1)
+   \   00000014   0x461F             MOV      R7,R3
+   \   00000016   0x42BA             CMP      R2,R7
+   \   00000018   0xDA18             BGE.N    ??Megre_2
+   \   0000001A   0x42A5             CMP      R5,R4
+   \   0000001C   0xDA16             BGE.N    ??Megre_2
+   \   0000001E   0xF830 0x7012      LDRH     R7,[R0, R2, LSL #+1]
+   \   00000022   0xF830 0xE015      LDRH     LR,[R0, R5, LSL #+1]
+   \   00000026   0xF106 0x0C01      ADD      R12,R6,#+1
+   \   0000002A   0xB2B6             UXTH     R6,R6
+   \   0000002C   0x45BE             CMP      LR,R7
+   \   0000002E   0xD2EC             BCS.N    ??Megre_1
+     80                  else 
+     81                  {
+     82                      Q[k++] = P[j++];
+   \   00000030   0xF821 0xE016      STRH     LR,[R1, R6, LSL #+1]
+   \   00000034   0x1C6D             ADDS     R5,R5,#+1
+   \   00000036   0xB2AD             UXTH     R5,R5
+   \   00000038   0x4666             MOV      R6,R12
+   \   0000003A   0xE7EB             B.N      ??Megre_0
+     83                  }
+     84              }
+     85          
+     86              while(i<mid)
+     87              {
+     88                  Q[k++] = P[i++];
+   \                     ??Megre_3: (+1)
+   \   0000003C   0xF830 0x3012      LDRH     R3,[R0, R2, LSL #+1]
+   \   00000040   0xB2B6             UXTH     R6,R6
+   \   00000042   0xF821 0x3016      STRH     R3,[R1, R6, LSL #+1]
+   \   00000046   0x1C52             ADDS     R2,R2,#+1
+   \   00000048   0xB292             UXTH     R2,R2
+   \   0000004A   0x1C76             ADDS     R6,R6,#+1
+     89              }
+   \                     ??Megre_2: (+1)
+   \   0000004C   0x42BA             CMP      R2,R7
+   \   0000004E   0xDBF5             BLT.N    ??Megre_3
+     90          
+     91              while(j<high) 
+   \                     ??Megre_4: (+1)
+   \   00000050   0x42A5             CMP      R5,R4
+   \   00000052   0xDA08             BGE.N    ??Megre_5
+     92              {
+     93                  Q[k++] = P[j++];
+   \   00000054   0xF830 0x2015      LDRH     R2,[R0, R5, LSL #+1]
+   \   00000058   0xB2B6             UXTH     R6,R6
+   \   0000005A   0xF821 0x2016      STRH     R2,[R1, R6, LSL #+1]
+   \   0000005E   0x1C6D             ADDS     R5,R5,#+1
+   \   00000060   0xB2AD             UXTH     R5,R5
+   \   00000062   0x1C76             ADDS     R6,R6,#+1
+   \   00000064   0xE7F4             B.N      ??Megre_4
+     94              }
+     95          }
+   \                     ??Megre_5: (+1)
+   \   00000066   0xBDF0             POP      {R4-R7,PC}       ;; return
+     96          
+     97          /*****************************************************************
+     98          *    Function Name           :   MergePass
+     99          *
+    100          *    Parameters              :
+    101          *
+    102          *    Description             :   该函数为归并排序的中层算法,具体算法
+    103          *                                解释请参考 嵌入式系统软件设计中的常用算法
+    104          *                                周航慈 著  北京航空航天大学出版社
+    105          *    Returns                 :
+    106          *
+    107          *    Global Variable         :
+    108          *    File Static Variable    :
+    109          *    Function Static Variable:
+    110          *----------------------------------------------------------------
+    111          *    Revision History
+    112          *    No.    Date        Revised by        Item        Description
+    113          *
+    114          *****************************************************************/
+
+   \                                 In section .text, align 2, keep-with-next
+    115          static void MegrePass(u16 *M, u16 *N, u16 length,u16 sortLen)
+    116          {
+   \                     MegrePass: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+   \   00000004   0xB082             SUB      SP,SP,#+8
+   \   00000006   0x4604             MOV      R4,R0
+   \   00000008   0x460D             MOV      R5,R1
+   \   0000000A   0x4616             MOV      R6,R2
+   \   0000000C   0x461F             MOV      R7,R3
+    117              u16 i=0,j;
+   \   0000000E   0xF04F 0x0800      MOV      R8,#+0
+   \   00000012   0xE00D             B.N      ??MegrePass_0
+    118          
+    119              while(i+2*length-1 < sortLen) 
+    120              {
+    121                  Megre(M,N,i,i+length,i+2*length);
+   \                     ??MegrePass_1: (+1)
+   \   00000014   0xB280             UXTH     R0,R0
+   \   00000016   0x9000             STR      R0,[SP, #+0]
+   \   00000018   0xEB06 0x0308      ADD      R3,R6,R8
+   \   0000001C   0xB29B             UXTH     R3,R3
+   \   0000001E   0x4642             MOV      R2,R8
+   \   00000020   0x4629             MOV      R1,R5
+   \   00000022   0x4620             MOV      R0,R4
+   \   00000024   0x.... 0x....      BL       Megre
+    122                  i+=2*length;
+   \   00000028   0xEB08 0x0846      ADD      R8,R8,R6, LSL #+1
+   \   0000002C   0xFA1F 0xF888      UXTH     R8,R8
+    123              }
+   \                     ??MegrePass_0: (+1)
+   \   00000030   0x4631             MOV      R1,R6
+   \   00000032   0xEB08 0x0041      ADD      R0,R8,R1, LSL #+1
+   \   00000036   0x463A             MOV      R2,R7
+   \   00000038   0x1E43             SUBS     R3,R0,#+1
+   \   0000003A   0x4293             CMP      R3,R2
+   \   0000003C   0xDBEA             BLT.N    ??MegrePass_1
+    124          
+    125              if(i+length<sortLen)
+   \   0000003E   0xEB01 0x0008      ADD      R0,R1,R8
+   \   00000042   0x4290             CMP      R0,R2
+   \   00000044   0xDA11             BGE.N    ??MegrePass_2
+    126              {
+    127                  Megre(M,N,i,i+length,sortLen);
+   \   00000046   0x9700             STR      R7,[SP, #+0]
+   \   00000048   0xEB06 0x0308      ADD      R3,R6,R8
+   \   0000004C   0xB29B             UXTH     R3,R3
+   \   0000004E   0x4642             MOV      R2,R8
+   \   00000050   0x4629             MOV      R1,R5
+   \   00000052   0x4620             MOV      R0,R4
+   \   00000054   0x.... 0x....      BL       Megre
+   \   00000058   0xE009             B.N      ??MegrePass_3
+    128              }
+    129              else
+    130              {
+    131                  for(j=i;j<sortLen;j++)
+    132                  {
+    133                      N[j] = M[j];
+   \                     ??MegrePass_4: (+1)
+   \   0000005A   0xF834 0x0018      LDRH     R0,[R4, R8, LSL #+1]
+   \   0000005E   0xF825 0x0018      STRH     R0,[R5, R8, LSL #+1]
+    134                  }
+   \   00000062   0xF108 0x0801      ADD      R8,R8,#+1
+   \   00000066   0xFA1F 0xF888      UXTH     R8,R8
+   \                     ??MegrePass_2: (+1)
+   \   0000006A   0x4590             CMP      R8,R2
+   \   0000006C   0xDBF5             BLT.N    ??MegrePass_4
+    135              }
+    136          }
+   \                     ??MegrePass_3: (+1)
+   \   0000006E   0xE8BD 0x81F3      POP      {R0,R1,R4-R8,PC}  ;; return
+    137          
+    138          /*****************************************************************
+    139          *    Function Name           :   MegreSort
+    140          *
+    141          *    Parameters              :   u16 *P        sorted array  
+    142          *                                u16 *Q        Auxiliary array
+    143          *                                u16 sortlen   need sort number
+    144          *    Description             :   该函数为归并排序的中层算法,具体算法
+    145          *                                解释请参考 嵌入式系统软件设计中的常用算法
+    146          *                                周航慈 著  北京航空航天大学出版社
+    147          *    Returns                 :
+    148          *
+    149          *    Global Variable         :
+    150          *    File Static Variable    :
+    151          *    Function Static Variable:
+    152          *----------------------------------------------------------------
+    153          *    Revision History
+    154          *    No.    Date        Revised by        Item        Description
+    155          *
+    156          *****************************************************************/
+
+   \                                 In section .text, align 2, keep-with-next
+    157          static void MegreSort(u16 *P,u16 *Q,u16 sortLen)
+    158          {
+   \                     MegreSort: (+1)
+   \   00000000   0xB5F8             PUSH     {R3-R7,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+   \   00000006   0x4616             MOV      R6,R2
+    159              u16 length =1;
+   \   00000008   0x2701             MOVS     R7,#+1
+   \   0000000A   0xE00E             B.N      ??MegreSort_0
+    160          
+    161              while(length < sortLen) 
+    162              {
+    163                  MegrePass(P,Q,length,sortLen);
+   \                     ??MegreSort_1: (+1)
+   \   0000000C   0x4633             MOV      R3,R6
+   \   0000000E   0x463A             MOV      R2,R7
+   \   00000010   0x4629             MOV      R1,R5
+   \   00000012   0x4620             MOV      R0,R4
+   \   00000014   0x.... 0x....      BL       MegrePass
+    164                  length *=2;
+   \   00000018   0x007F             LSLS     R7,R7,#+1
+    165                  MegrePass(Q,P,length,sortLen);
+   \   0000001A   0x4633             MOV      R3,R6
+   \   0000001C   0x463A             MOV      R2,R7
+   \   0000001E   0xB292             UXTH     R2,R2
+   \   00000020   0x4621             MOV      R1,R4
+   \   00000022   0x4628             MOV      R0,R5
+   \   00000024   0x.... 0x....      BL       MegrePass
+    166                  length *=2;
+   \   00000028   0x007F             LSLS     R7,R7,#+1
+    167              }
+   \                     ??MegreSort_0: (+1)
+   \   0000002A   0xB2BF             UXTH     R7,R7
+   \   0000002C   0x42B7             CMP      R7,R6
+   \   0000002E   0xD3ED             BCC.N    ??MegreSort_1
+    168          }
+   \   00000030   0xBDF1             POP      {R0,R4-R7,PC}    ;; return
+    169          
+    170          /*****************************************************************
+    171          *    Function Name           :   ADC1_Sample
+    172          *
+    173          *    Parameters              :
+    174          *
+    175          *    Description             :
+    176          *
+    177          *    Returns                 :
+    178          *
+    179          *    Global Variable         :
+    180          *    File Static Variable    :
+    181          *    Function Static Variable:
+    182          *----------------------------------------------------------------
+    183          *    Revision History
+    184          *    No.    Date        Revised by        Item        Description
+    185          *
+    186          *****************************************************************/
+
+   \                                 In section .text, align 2, keep-with-next
+    187          u16 ADC1_Sample(u8 channel)
+    188          {
+   \                     ADC1_Sample: (+1)
+   \   00000000   0xE92D 0x43F0      PUSH     {R4-R9,LR}
+   \   00000004   0xB09F             SUB      SP,SP,#+124
+   \   00000006   0x4605             MOV      R5,R0
+    189          	u8 i;
+    190          	/*  传感器采集数组  */
+    191          	u16 ADCArry[30];
+    192          	/*  用于排序的临时数组  */
+    193          	u16 tmpArry[30];
+    194          
+    195          	u16 ADCValue;
+    196          	/*  */
+    197          	u32 sum=0;
+   \   00000008   0x2400             MOVS     R4,#+0
+    198          
+    199              for(i = 0; i < 30; i ++)
+   \   0000000A   0x4626             MOV      R6,R4
+   \   0000000C   0x.... 0x....      LDR.W    R8,??DataTable7_1  ;; 0x40012400
+   \   00000010   0x.... 0x....      LDR.W    R9,??DataTable7_2
+   \   00000014   0xE020             B.N      ??ADC1_Sample_0
+    200              {
+    201                  /* ADC1 regular channels configuration */ 
+    202                  ADC_RegularChannelConfig(ADC1, channel, 1, ADC_SampleTime_55Cycles5);
+   \                     ??ADC1_Sample_1: (+1)
+   \   00000016   0x2305             MOVS     R3,#+5
+   \   00000018   0x2201             MOVS     R2,#+1
+   \   0000001A   0x4629             MOV      R1,R5
+   \   0000001C   0x4640             MOV      R0,R8
+   \   0000001E   0x.... 0x....      BL       ADC_RegularChannelConfig
+    203                  /* Start ADC1 Software Conversion */ 
+    204                  ADC_SoftwareStartConvCmd(ADC1, ENABLE);
+   \   00000022   0x2101             MOVS     R1,#+1
+   \   00000024   0x4640             MOV      R0,R8
+   \   00000026   0x.... 0x....      BL       ADC_SoftwareStartConvCmd
+    205                  /*  等待转换  */
+    206                  while(!(ADC1->SR&0x00000002));
+   \                     ??ADC1_Sample_2: (+1)
+   \   0000002A   0xF8D8 0x0000      LDR      R0,[R8, #+0]
+   \   0000002E   0x0780             LSLS     R0,R0,#+30
+   \   00000030   0xD5FB             BPL.N    ??ADC1_Sample_2
+    207                  //while(!ADC_GetFlagStatus(ADC1,ADC_FLAG_EOC));
+    208                  ADC1ConvertedValue = ADC1->DR & 0x0000FFFF;
+   \   00000032   0xF8D8 0x004C      LDR      R0,[R8, #+76]
+   \   00000036   0xF8A9 0x0000      STRH     R0,[R9, #+0]
+    209          		ADC1ConvertedValue = ADC_GetConversionValue(ADC1);
+   \   0000003A   0x4640             MOV      R0,R8
+   \   0000003C   0x.... 0x....      BL       ADC_GetConversionValue
+   \   00000040   0xF8A9 0x0000      STRH     R0,[R9, #+0]
+    210                  /* DISABLE ADC1  */ 
+    211                  ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+   \   00000044   0x4621             MOV      R1,R4
+   \   00000046   0x4640             MOV      R0,R8
+   \   00000048   0x.... 0x....      BL       ADC_SoftwareStartConvCmd
+    212                  /*-----------------------------------------------------------------------*/
+    213                  ADCArry[i] = ADC1ConvertedValue ;
+   \   0000004C   0xF8B9 0x0000      LDRH     R0,[R9, #+0]
+   \   00000050   0xA90F             ADD      R1,SP,#+60
+   \   00000052   0xF821 0x0017      STRH     R0,[R1, R7, LSL #+1]
+    214              }
+   \   00000056   0x1C76             ADDS     R6,R6,#+1
+   \                     ??ADC1_Sample_0: (+1)
+   \   00000058   0xB2F6             UXTB     R6,R6
+   \   0000005A   0x4637             MOV      R7,R6
+   \   0000005C   0x2F1E             CMP      R7,#+30
+   \   0000005E   0xDBDA             BLT.N    ??ADC1_Sample_1
+    215          	//debug_printf("ADC1ConvertedValue = %f\r\n", (float)ADCArry[5]);
+    216              /* 排序 */
+    217              MegreSort(ADCArry, tmpArry, 30);
+   \   00000060   0x221E             MOVS     R2,#+30
+   \   00000062   0xA900             ADD      R1,SP,#+0
+   \   00000064   0xA80F             ADD      R0,SP,#+60
+   \   00000066   0x.... 0x....      BL       MegreSort
+    218          
+    219          	/*  使用前清零  */
+    220              sum = 0;
+    221          	/* 取中间值求和 */
+    222              for(i = 5; i < 25; i ++)
+   \   0000006A   0x2005             MOVS     R0,#+5
+   \   0000006C   0xAA0F             ADD      R2,SP,#+60
+   \   0000006E   0xE003             B.N      ??ADC1_Sample_3
+    223              {
+    224                  sum += ADCArry[i];
+   \                     ??ADC1_Sample_4: (+1)
+   \   00000070   0xF832 0x1011      LDRH     R1,[R2, R1, LSL #+1]
+   \   00000074   0x190C             ADDS     R4,R1,R4
+    225              }
+   \   00000076   0x1C40             ADDS     R0,R0,#+1
+   \                     ??ADC1_Sample_3: (+1)
+   \   00000078   0xB2C0             UXTB     R0,R0
+   \   0000007A   0x4601             MOV      R1,R0
+   \   0000007C   0x2919             CMP      R1,#+25
+   \   0000007E   0xDBF7             BLT.N    ??ADC1_Sample_4
+    226              ADCValue = (u16)(sum/20);
+    227              return ADCValue;
+   \   00000080   0x2014             MOVS     R0,#+20
+   \   00000082   0xFBB4 0xF0F0      UDIV     R0,R4,R0
+   \   00000086   0xB280             UXTH     R0,R0
+   \   00000088   0xB01F             ADD      SP,SP,#+124
+   \   0000008A   0xE8BD 0x83F0      POP      {R4-R9,PC}       ;; return
+    228          }
+    229          
+    230          
+    231          /*****************************************************************
+    232          *    Function Name           :  APP_GetCSF11
+    233          *
+    234          *    Parameters              :  
+    235          *                                
+    236          *    Description             :	获取数据
+    237          *
+    238          *    Returns                 :
+    239          *
+    240          *    Global Variable         :
+    241          *    File Static Variable    :
+    242          *    Function Static Variable:
+    243          *----------------------------------------------------------------
+    244          *    Revision History
+    245          *    No.    Date        Revised by        Item        Description
+    246          *
+    247          *****************************************************************/
+
+   \                                 In section .text, align 2, keep-with-next
+    248          u16 APP_GetCSF11(u8 channel)
+    249          {
+   \                     APP_GetCSF11: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+    250          	u16 adc_w,adc_t;
+    251              float result_w,result_t;
+    252          	u16 value;
+    253          
+    254          	switch(channel)
+   \   00000002   0x2801             CMP      R0,#+1
+   \   00000004   0xD010             BEQ.N    ??APP_GetCSF11_0
+   \   00000006   0x2802             CMP      R0,#+2
+   \   00000008   0xD11C             BNE.N    ??APP_GetCSF11_1
+    255          	{
+    256          		case ADC_SAMPLE_CURCHANNEL:
+    257          			adc_w = ADC1_Sample(ADC_Channel_10);
+   \   0000000A   0x200A             MOVS     R0,#+10
+   \   0000000C   0x.... 0x....      BL       ADC1_Sample
+   \   00000010   0x4605             MOV      R5,R0
+    258          			adc_t = ADC1_Sample(ADC_Channel_11);
+   \   00000012   0x200B             MOVS     R0,#+11
+   \   00000014   0x.... 0x....      BL       ADC1_Sample
+   \   00000018   0x4604             MOV      R4,R0
+    259          			debug_printf("adc_w = %d, adc_t = %d\r\n", adc_w, adc_t);
+   \   0000001A   0x4622             MOV      R2,R4
+   \   0000001C   0x4629             MOV      R1,R5
+   \   0000001E   0x.... 0x....      ADR.W    R0,?_1
+   \   00000022   0x.... 0x....      BL       debug_printf
+    260          		break;
+   \   00000026   0xE00D             B.N      ??APP_GetCSF11_1
+    261          		case ADC_SAMPLE_VOLCHANNEL:
+    262          			adc_w = ADC1_Sample(ADC_Channel_12);
+   \                     ??APP_GetCSF11_0: (+1)
+   \   00000028   0x200C             MOVS     R0,#+12
+   \   0000002A   0x.... 0x....      BL       ADC1_Sample
+   \   0000002E   0x4605             MOV      R5,R0
+    263          			adc_t = ADC1_Sample(ADC_Channel_13);
+   \   00000030   0x200D             MOVS     R0,#+13
+   \   00000032   0x.... 0x....      BL       ADC1_Sample
+   \   00000036   0x4604             MOV      R4,R0
+    264          			debug_printf("adc_w = %d, adc_t = %d\r\n", adc_w, adc_t);
+   \   00000038   0x4622             MOV      R2,R4
+   \   0000003A   0x4629             MOV      R1,R5
+   \   0000003C   0x.... 0x....      ADR.W    R0,?_1
+   \   00000040   0x.... 0x....      BL       debug_printf
+    265          		break;
+    266          		case 3:
+    267          		break;
+    268          		default:
+    269          		break;
+    270          	}
+    271          
+    272          	if(adc_w < VMIN_C) 
+   \                     ??APP_GetCSF11_1: (+1)
+   \   00000044   0xF240 0x204E      MOVW     R0,#+590
+   \   00000048   0xB2AD             UXTH     R5,R5
+   \   0000004A   0x4285             CMP      R5,R0
+   \   0000004C   0xDA00             BGE.N    ??APP_GetCSF11_2
+    273          		adc_w = VMIN_C;
+   \   0000004E   0x4605             MOV      R5,R0
+    274          	if(adc_w > VMAX_C) 
+   \                     ??APP_GetCSF11_2: (+1)
+   \   00000050   0xF5B5 0x6F3A      CMP      R5,#+2976
+   \   00000054   0xDB01             BLT.N    ??APP_GetCSF11_3
+    275          		adc_w = VMAX_C;
+   \   00000056   0xF640 0x359F      MOVW     R5,#+2975
+    276          
+    277          	if(adc_t < VMIN_C) 
+   \                     ??APP_GetCSF11_3: (+1)
+   \   0000005A   0xB2A4             UXTH     R4,R4
+   \   0000005C   0x4284             CMP      R4,R0
+   \   0000005E   0xDA00             BGE.N    ??APP_GetCSF11_4
+    278          		adc_t = VMIN_C;
+   \   00000060   0x4604             MOV      R4,R0
+    279          	if(adc_t > VMAX_C) 
+   \                     ??APP_GetCSF11_4: (+1)
+   \   00000062   0xF5B4 0x6F3A      CMP      R4,#+2976
+   \   00000066   0xDB01             BLT.N    ??APP_GetCSF11_5
+    280          		adc_t = VMAX_C;
+   \   00000068   0xF640 0x349F      MOVW     R4,#+2975
+    281          
+    282          	/* 土壤水分含量 */
+    283          	result_w = (float)(adc_w - VMIN_C)*(RMAX_C - RMIN_C)/(float)(VMAX_C - VMIN_C) + RMIN_C;
+   \                     ??APP_GetCSF11_5: (+1)
+   \   0000006C   0x....             LDR.N    R6,??DataTable7_3  ;; 0x42c80000
+   \   0000006E   0xF2A5 0x204E      SUBW     R0,R5,#+590
+   \   00000072   0x.... 0x....      BL       __aeabi_i2f
+   \   00000076   0x4631             MOV      R1,R6
+   \   00000078   0x.... 0x....      BL       __aeabi_fmul
+   \   0000007C   0x....             LDR.N    R1,??DataTable7_4  ;; 0x45151000
+   \   0000007E   0x.... 0x....      BL       __aeabi_fdiv
+   \   00000082   0x4605             MOV      R5,R0
+    284          	debug_printf("result_w = %d\r\n", result_w);
+   \   00000084   0x.... 0x....      BL       __aeabi_f2d
+   \   00000088   0x4602             MOV      R2,R0
+   \   0000008A   0x460B             MOV      R3,R1
+   \   0000008C   0x.... 0x....      ADR.W    R0,?_2
+   \   00000090   0x.... 0x....      BL       debug_printf
+    285          
+    286          	/* 土壤温度 */
+    287          	result_t = ((float)(adc_t - VMIN_C)*(RMAX_C - RMIN_C)/(float)(VMAX_C - VMIN_C) + RMIN_C)/2; 
+   \   00000094   0xF2A4 0x204E      SUBW     R0,R4,#+590
+   \   00000098   0x.... 0x....      BL       __aeabi_i2f
+   \   0000009C   0x4631             MOV      R1,R6
+   \   0000009E   0x.... 0x....      BL       __aeabi_fmul
+   \   000000A2   0x....             LDR.N    R1,??DataTable7_5  ;; 0x45951000
+   \   000000A4   0x.... 0x....      BL       __aeabi_fdiv
+   \   000000A8   0x4604             MOV      R4,R0
+    288          	debug_printf("result_t = %d\r\n", result_t);
+   \   000000AA   0x.... 0x....      BL       __aeabi_f2d
+   \   000000AE   0x4602             MOV      R2,R0
+   \   000000B0   0x460B             MOV      R3,R1
+   \   000000B2   0x.... 0x....      ADR.W    R0,?_3
+   \   000000B6   0x.... 0x....      BL       debug_printf
+    289          
+    290          	/* 返回值--土壤温度和水分的值 */
+    291          	value = (((u16)result_w & 0xFF) << 8)|((u16)result_t & 0xFF);
+    292          
+    293          	return value;
+   \   000000BA   0x4628             MOV      R0,R5
+   \   000000BC   0x.... 0x....      BL       __aeabi_f2iz
+   \   000000C0   0x4605             MOV      R5,R0
+   \   000000C2   0x4620             MOV      R0,R4
+   \   000000C4   0x.... 0x....      BL       __aeabi_f2iz
+   \   000000C8   0xB2C0             UXTB     R0,R0
+   \   000000CA   0xEA40 0x2005      ORR      R0,R0,R5, LSL #+8
+   \   000000CE   0xB280             UXTH     R0,R0
+   \   000000D0   0xBD70             POP      {R4-R6,PC}       ;; return
+    294          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7:
+   \   00000000   0x40010C00         DC32     0x40010c00
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7_1:
+   \   00000000   0x40012400         DC32     0x40012400
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7_2:
+   \   00000000   0x........         DC32     ADC1ConvertedValue
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7_3:
+   \   00000000   0x42C80000         DC32     0x42c80000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7_4:
+   \   00000000   0x45151000         DC32     0x45151000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable7_5:
+   \   00000000   0x45951000         DC32     0x45951000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_0:
+   \   00000000   0x5B 0x25          DC8 "[%s] enter.\015\012"
+   \              0x73 0x5D    
+   \              0x20 0x65    
+   \              0x6E 0x74    
+   \              0x65 0x72    
+   \              0x2E 0x0D    
+   \              0x0A 0x00    
+   \   0000000E   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_1:
+   \   00000000   0x61 0x64          DC8 "adc_w = %d, adc_t = %d\015\012"
+   \              0x63 0x5F    
+   \              0x77 0x20    
+   \              0x3D 0x20    
+   \              0x25 0x64    
+   \              0x2C 0x20    
+   \              0x61 0x64    
+   \              0x63 0x5F    
+   \              0x74 0x20    
+   \              0x3D 0x20    
+   \              0x25 0x64    
+   \              0x0D 0x0A    
+   \              0x00         
+   \   00000019   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_2:
+   \   00000000   0x72 0x65          DC8 "result_w = %d\015\012"
+   \              0x73 0x75    
+   \              0x6C 0x74    
+   \              0x5F 0x77    
+   \              0x20 0x3D    
+   \              0x20 0x25    
+   \              0x64 0x0D    
+   \              0x0A 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ?_3:
+   \   00000000   0x72 0x65          DC8 "result_t = %d\015\012"
+   \              0x73 0x75    
+   \              0x6C 0x74    
+   \              0x5F 0x74    
+   \              0x20 0x3D    
+   \              0x20 0x25    
+   \              0x64 0x0D    
+   \              0x0A 0x00    
+    295          
+    296          
+    297          
+    298          
+    299          
+    300          
+    301          
+    302          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+     152   ADC1_Sample
+       152   -> ADC_GetConversionValue
+       152   -> ADC_RegularChannelConfig
+       152   -> ADC_SoftwareStartConvCmd
+       152   -> MegreSort
+      16   APP_GetCSF11
+        16   -> ADC1_Sample
+        16   -> __aeabi_f2d
+        16   -> __aeabi_f2iz
+        16   -> __aeabi_fdiv
+        16   -> __aeabi_fmul
+        16   -> __aeabi_i2f
+        16   -> debug_printf
+       8   App_ADC_TASK
+         8   -> GPIO_SetBits
+         8   -> OSTimeDlyHMSM
+         8   -> debug_printf
+      20   Megre
+      32   MegrePass
+        32   -> Megre
+      24   MegreSort
+        24   -> MegrePass
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable7
+       4  ??DataTable7_1
+       4  ??DataTable7_2
+       4  ??DataTable7_3
+       4  ??DataTable7_4
+       4  ??DataTable7_5
+      16  ?_0
+      28  ?_1
+      16  ?_2
+      16  ?_3
+       2  ADC1ConvertedValue
+     142  ADC1_Sample
+     210  APP_GetCSF11
+      36  App_ADC_TASK
+     104  Megre
+     114  MegrePass
+      50  MegreSort
+      16  -- Other
+
+ 
+   2 bytes in section .bss
+ 772 bytes in section .text
+ 
+ 772 bytes of CODE memory
+   2 bytes of DATA memory
+
+Errors: none
+Warnings: 1

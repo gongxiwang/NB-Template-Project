@@ -1,0 +1,15 @@
+"D:\Softwares\IAR7.40\arm\bin\armproc.dll" 
+
+"D:\Softwares\IAR7.40\arm\bin\armstlink.dll" 
+
+"E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Exe\XF-SXT-N-V01.out" 
+
+--plugin "D:\Softwares\IAR7.40\arm\bin\armbat.dll" 
+
+--device_macro "D:\Softwares\IAR7.40\arm\config\debugger\ST\STM32F1xx_XL.dmac" 
+
+--flash_loader "D:\Softwares\IAR7.40\arm\config\flashloader\ST\FlashSTM32F10xxB.board" 
+
+
+
+

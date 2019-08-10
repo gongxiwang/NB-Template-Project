@@ -1,0 +1,311 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp.c
+      1          /*
+      2          *********************************************************************************************************
+      3          *                                     MICIRUM BOARD SUPPORT PACKAGE
+      4          *
+      5          *                             (c) Copyright 2007; Micrium, Inc.; Weston, FL
+      6          *
+      7          *               All rights reserved.  Protected by international copyright laws.
+      8          *               Knowledge of the source code may NOT be used to develop a similar product.
+      9          *               Please help us continue to provide the Embedded community with the finest
+     10          *               software available.  Your honesty is greatly appreciated.
+     11          *********************************************************************************************************
+     12          */
+     13          
+     14          
+     15          /*
+     16          *********************************************************************************************************
+     17          *                                             INCLUDE FILES
+     18          *********************************************************************************************************
+     19          */
+     20          
+     21          #define  BSP_MODULE
+     22          #include <bsp.h>
+     23          #include "bsp_uart.h"
+     24          #include "bsp_led.h"
+     25          #include "bsp_adc.h"
+     26          #include "bsp_beep.h"
+     27          #include "bsp_key.h"
+     28          
+     29          /*
+     30          *********************************************************************************************************
+     31          *                                               BSP_Init()
+     32          *
+     33          * Description : Initialize the Board Support Package (BSP).
+     34          *
+     35          * Argument(s) : none.
+     36          *
+     37          * Return(s)   : none.
+     38          *
+     39          * Caller(s)   : Application.
+     40          *
+     41          * Note(s)     : (1) This function SHOULD be called before any other BSP function is called.
+     42          *********************************************************************************************************
+     43          */
+     44          
+
+   \                                 In section .text, align 2, keep-with-next
+     45          void  BSP_Init (void)
+     46          {
+   \                     BSP_Init: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     47              RCC_DeInit();										/*禁止中断、重启PLL、重启HSE、打开HSE、打开LSE*/
+   \   00000002   0x.... 0x....      BL       RCC_DeInit
+     48              RCC_HSEConfig(RCC_HSE_ON);							/* 外部时钟打开 */
+   \   00000006   0xF44F 0x3080      MOV      R0,#+65536
+   \   0000000A   0x.... 0x....      BL       RCC_HSEConfig
+     49              RCC_WaitForHSEStartUp();							/* 等待时钟启动 */
+   \   0000000E   0x.... 0x....      BL       RCC_WaitForHSEStartUp
+     50              
+     51              RCC_HCLKConfig(RCC_SYSCLK_Div1);					/* HCLK ：AHB总线时钟，由系统时钟SYSCLK 分频得到，一般不分频，等于系统时钟72 */
+   \   00000012   0x2000             MOVS     R0,#+0
+   \   00000014   0x.... 0x....      BL       RCC_HCLKConfig
+     52              RCC_PCLK2Config(RCC_HCLK_Div1);						/* APB2时钟不分频72mhz */
+   \   00000018   0x2000             MOVS     R0,#+0
+   \   0000001A   0x.... 0x....      BL       RCC_PCLK2Config
+     53              RCC_PCLK1Config(RCC_HCLK_Div2);						/* APB1 二分频36mhz */
+   \   0000001E   0xF44F 0x6080      MOV      R0,#+1024
+   \   00000022   0x.... 0x....      BL       RCC_PCLK1Config
+     54              RCC_ADCCLKConfig(RCC_PCLK2_Div8);					/* ADC 六分频12mhz */
+   \   00000026   0xF44F 0x4040      MOV      R0,#+49152
+   \   0000002A   0x.... 0x....      BL       RCC_ADCCLKConfig
+     55              FLASH_SetLatency(FLASH_Latency_2);
+   \   0000002E   0x2002             MOVS     R0,#+2
+   \   00000030   0x.... 0x....      BL       FLASH_SetLatency
+     56              FLASH_PrefetchBufferCmd(FLASH_PrefetchBuffer_Enable);
+   \   00000034   0x2010             MOVS     R0,#+16
+   \   00000036   0x.... 0x....      BL       FLASH_PrefetchBufferCmd
+     57              RCC_PLLConfig(RCC_PLLSource_HSE_Div1, RCC_PLLMul_9);/* 8*9 = 72(MHZ) */
+   \   0000003A   0xF44F 0x11E0      MOV      R1,#+1835008
+   \   0000003E   0xF44F 0x3080      MOV      R0,#+65536
+   \   00000042   0x.... 0x....      BL       RCC_PLLConfig
+     58              RCC_PLLCmd(ENABLE);
+   \   00000046   0x2001             MOVS     R0,#+1
+   \   00000048   0x.... 0x....      BL       RCC_PLLCmd
+     59          
+     60              while (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET) {
+   \                     ??BSP_Init_0: (+1)
+   \   0000004C   0x2039             MOVS     R0,#+57
+   \   0000004E   0x.... 0x....      BL       RCC_GetFlagStatus
+   \   00000052   0x2800             CMP      R0,#+0
+   \   00000054   0xD0FA             BEQ.N    ??BSP_Init_0
+     61                  ;
+     62              }
+     63              RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
+   \   00000056   0x2002             MOVS     R0,#+2
+   \   00000058   0x.... 0x....      BL       RCC_SYSCLKConfig
+     64          
+     65              while (RCC_GetSYSCLKSource() != 0x08) {
+   \                     ??BSP_Init_1: (+1)
+   \   0000005C   0x.... 0x....      BL       RCC_GetSYSCLKSource
+   \   00000060   0x2808             CMP      R0,#+8
+   \   00000062   0xD1FB             BNE.N    ??BSP_Init_1
+     66                  ;
+     67              }
+     68          	BspInitClk();												/* 初始化时钟. */
+   \   00000064   0x.... 0x....      BL       BspInitClk
+     69              BSP_LED_Init();                                             /* 初始化LED. */
+   \   00000068   0x.... 0x....      BL       BSP_LED_Init
+     70          	BSP_UART_Init();    										/* 初始化串口. */
+   \   0000006C   0x.... 0x....      BL       BSP_UART_Init
+     71              BSP_ADCS_Init(); 											/* 初始化ADC. */
+   \   00000070   0x.... 0x....      BL       BSP_ADCS_Init
+     72          	BSP_Beep_Init();											/* 初始化蜂鸣器. */
+   \   00000074   0x.... 0x....      BL       BSP_Beep_Init
+     73          	BSP_DMA_Init();												/* 初始化DMA. */
+   \   00000078   0x.... 0x....      BL       BSP_DMA_Init
+     74              BSP_KEY_Init();                                             /* 初始化用户按键 */
+   \   0000007C   0xE8BD 0x4001      POP      {R0,LR}
+   \   00000080   0x.... 0x....      B.W      BSP_KEY_Init
+     75          }
+     76          
+     77          /**
+     78            * @brief  BspInitClk时钟初始化
+     79           */
+
+   \                                 In section .text, align 2, keep-with-next
+     80          static void BspInitClk(void)
+     81          {
+   \                     BspInitClk: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     82          	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1 | RCC_AHBPeriph_DMA2, ENABLE); 
+   \   00000002   0x2101             MOVS     R1,#+1
+   \   00000004   0x2003             MOVS     R0,#+3
+   \   00000006   0x.... 0x....      BL       RCC_AHBPeriphClockCmd
+     83          	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_USART3, ENABLE);
+   \   0000000A   0x2101             MOVS     R1,#+1
+   \   0000000C   0xF44F 0x20C0      MOV      R0,#+393216
+   \   00000010   0x.... 0x....      BL       RCC_APB1PeriphClockCmd
+     84          	RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD | 
+     85          							RCC_APB2Periph_GPIOE | RCC_APB2Periph_AFIO | RCC_APB2Periph_USART1 | RCC_APB2Periph_ADC1, ENABLE);	/* 使能GPIO的时钟 */
+   \   00000014   0x2101             MOVS     R1,#+1
+   \   00000016   0xF244 0x207D      MOVW     R0,#+17021
+   \   0000001A   0xE8BD 0x4004      POP      {R2,LR}
+   \   0000001E   0x.... 0x....      B.W      RCC_APB2PeriphClockCmd
+     86          }
+     87          
+     88          /*
+     89          *********************************************************************************************************
+     90          *                                            BSP_CPU_ClkFreq()
+     91          *
+     92          * Description : Read CPU registers to determine the CPU clock frequency of the chip.
+     93          *
+     94          * Argument(s) : none.
+     95          *
+     96          * Return(s)   : The CPU clock frequency, in Hz.
+     97          *
+     98          * Caller(s)   : Application.
+     99          *
+    100          * Note(s)     : none.
+    101          *********************************************************************************************************
+    102          */
+    103          
+
+   \                                 In section .text, align 2, keep-with-next
+    104          CPU_INT32U  BSP_CPU_ClkFreq (void)
+    105          {
+   \                     BSP_CPU_ClkFreq: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB085             SUB      SP,SP,#+20
+    106              RCC_ClocksTypeDef  rcc_clocks;
+    107          
+    108          
+    109              RCC_GetClocksFreq(&rcc_clocks);
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x.... 0x....      BL       RCC_GetClocksFreq
+    110          
+    111              return ((CPU_INT32U)rcc_clocks.HCLK_Frequency);
+   \   0000000A   0x9801             LDR      R0,[SP, #+4]
+   \   0000000C   0xB005             ADD      SP,SP,#+20
+   \   0000000E   0xBD00             POP      {PC}             ;; return
+    112          }
+    113          
+    114          
+    115          /*
+    116          *********************************************************************************************************
+    117          *********************************************************************************************************
+    118          *                                         OS CORTEX-M3 FUNCTIONS
+    119          *********************************************************************************************************
+    120          *********************************************************************************************************
+    121          */
+    122          
+    123          /*
+    124          *********************************************************************************************************
+    125          *                                         OS_CPU_SysTickClkFreq()
+    126          *
+    127          * Description : Get system tick clock frequency.
+    128          *
+    129          * Argument(s) : none.
+    130          *
+    131          * Return(s)   : Clock frequency (of system tick).
+    132          *
+    133          * Caller(s)   : BSP_Init().
+    134          *
+    135          * Note(s)     : none.
+    136          *********************************************************************************************************
+    137          */
+    138          
+
+   \                                 In section .text, align 2, keep-with-next
+    139          INT32U  OS_CPU_SysTickClkFreq (void)
+    140          {
+    141              INT32U  freq;
+    142          
+    143          
+    144              freq = BSP_CPU_ClkFreq();
+    145              return (freq);
+   \                     OS_CPU_SysTickClkFreq: (+1)
+   \   00000000   0x....             B.N      BSP_CPU_ClkFreq
+    146          }
+    147          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   BSP_CPU_ClkFreq
+        24   -> RCC_GetClocksFreq
+       8   BSP_Init
+         8   -> BSP_ADCS_Init
+         8   -> BSP_Beep_Init
+         8   -> BSP_DMA_Init
+         0   -> BSP_KEY_Init
+         8   -> BSP_LED_Init
+         8   -> BSP_UART_Init
+         8   -> BspInitClk
+         8   -> FLASH_PrefetchBufferCmd
+         8   -> FLASH_SetLatency
+         8   -> RCC_ADCCLKConfig
+         8   -> RCC_DeInit
+         8   -> RCC_GetFlagStatus
+         8   -> RCC_GetSYSCLKSource
+         8   -> RCC_HCLKConfig
+         8   -> RCC_HSEConfig
+         8   -> RCC_PCLK1Config
+         8   -> RCC_PCLK2Config
+         8   -> RCC_PLLCmd
+         8   -> RCC_PLLConfig
+         8   -> RCC_SYSCLKConfig
+         8   -> RCC_WaitForHSEStartUp
+       8   BspInitClk
+         8   -> RCC_AHBPeriphClockCmd
+         8   -> RCC_APB1PeriphClockCmd
+         0   -> RCC_APB2PeriphClockCmd
+       0   OS_CPU_SysTickClkFreq
+         0   -> BSP_CPU_ClkFreq
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      16  BSP_CPU_ClkFreq
+     132  BSP_Init
+      34  BspInitClk
+       2  OS_CPU_SysTickClkFreq
+
+ 
+ 184 bytes in section .text
+ 
+ 184 bytes of CODE memory
+
+Errors: none
+Warnings: none

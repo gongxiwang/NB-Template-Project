@@ -1,0 +1,601 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_modbus.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_modbus.c
+#        -D LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp_modbus.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp_modbus.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_modbus.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  bsp_modbus.c
+      3            * @author  walle
+      4            * @version  V1.0.0
+      5            * @date  08/07/2019
+      6            * @brief  modbus驱动
+      7            */ 
+      8          #include "bsp_modbus.h"
+      9          #include "bsp_uart.h"
+     10          #include "bsp_dma.h"
+     11          
+     12          
+     13          /**
+     14            * @brief CRC0校验
+     15           */
+
+   \                                 In section .text, align 4, keep-with-next
+     16          static const u8 s_CRCHi[] = {
+   \                     s_CRCHi:
+   \   00000000   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   00000010   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   00000020   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   00000030   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   00000040   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   00000050   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   00000060   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   00000070   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   00000080   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   00000090   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   000000A0   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   000000B0   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   000000C0   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \   000000D0   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   000000E0   0x01 0xC0          DC8 1, 192, 128, 65, 0, 193, 129, 64, 0, 193, 129, 64, 1, 192, 128, 65
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \   000000F0   0x00 0xC1          DC8 0, 193, 129, 64, 1, 192, 128, 65, 1, 192, 128, 65, 0, 193, 129, 64
+   \              0x81 0x40    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x01 0xC0    
+   \              0x80 0x41    
+   \              0x00 0xC1    
+   \              0x81 0x40    
+     17              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
+     18              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+     19              0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
+     20              0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+     21              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1,
+     22              0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
+     23              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1,
+     24              0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+     25              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
+     26              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40,
+     27              0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1,
+     28              0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+     29              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
+     30              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40,
+     31              0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
+     32              0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40,
+     33              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
+     34              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+     35              0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
+     36              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+     37              0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0,
+     38              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00, 0xC1, 0x81, 0x40,
+     39              0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1,
+     40              0x81, 0x40, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
+     41              0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
+     42              0x80, 0x41, 0x00, 0xC1, 0x81, 0x40
+     43          } ;
+     44          
+     45          /**
+     46            * @brief CRC1校验
+     47           */
+
+   \                                 In section .text, align 4, keep-with-next
+     48          const u8 s_CRCLo[] = {
+   \                     s_CRCLo:
+   \   00000000   0x00 0xC0          DC8 0, 192, 193, 1, 195, 3, 2, 194, 198, 6, 7, 199, 5, 197, 196, 4, 204
+   \              0xC1 0x01    
+   \              0xC3 0x03    
+   \              0x02 0xC2    
+   \              0xC6 0x06    
+   \              0x07 0xC7    
+   \              0x05 0xC5    
+   \              0xC4 0x04    
+   \              0xCC         
+   \   00000011   0x0C 0x0D          DC8 12, 13, 205, 15, 207, 206, 14, 10, 202, 203, 11, 201, 9, 8, 200
+   \              0xCD 0x0F    
+   \              0xCF 0xCE    
+   \              0x0E 0x0A    
+   \              0xCA 0xCB    
+   \              0x0B 0xC9    
+   \              0x09 0x08    
+   \              0xC8         
+   \   00000020   0xD8 0x18          DC8 216, 24, 25, 217, 27, 219, 218, 26, 30, 222, 223, 31, 221, 29, 28
+   \              0x19 0xD9    
+   \              0x1B 0xDB    
+   \              0xDA 0x1A    
+   \              0x1E 0xDE    
+   \              0xDF 0x1F    
+   \              0xDD 0x1D    
+   \              0x1C         
+   \   0000002F   0xDC 0x14          DC8 220, 20, 212, 213, 21, 215, 23, 22, 214, 210, 18, 19, 211, 17, 209
+   \              0xD4 0xD5    
+   \              0x15 0xD7    
+   \              0x17 0x16    
+   \              0xD6 0xD2    
+   \              0x12 0x13    
+   \              0xD3 0x11    
+   \              0xD1         
+   \   0000003E   0xD0 0x10          DC8 208, 16, 240, 48, 49, 241, 51, 243, 242, 50, 54, 246, 247, 55, 245
+   \              0xF0 0x30    
+   \              0x31 0xF1    
+   \              0x33 0xF3    
+   \              0xF2 0x32    
+   \              0x36 0xF6    
+   \              0xF7 0x37    
+   \              0xF5         
+   \   0000004D   0x35 0x34          DC8 53, 52, 244, 60, 252, 253, 61, 255, 63, 62, 254, 250, 58, 59, 251
+   \              0xF4 0x3C    
+   \              0xFC 0xFD    
+   \              0x3D 0xFF    
+   \              0x3F 0x3E    
+   \              0xFE 0xFA    
+   \              0x3A 0x3B    
+   \              0xFB         
+   \   0000005C   0x39 0xF9          DC8 57, 249, 248, 56, 40, 232, 233, 41, 235, 43, 42, 234, 238, 46, 47
+   \              0xF8 0x38    
+   \              0x28 0xE8    
+   \              0xE9 0x29    
+   \              0xEB 0x2B    
+   \              0x2A 0xEA    
+   \              0xEE 0x2E    
+   \              0x2F         
+   \   0000006B   0xEF 0x2D          DC8 239, 45, 237, 236, 44, 228, 36, 37, 229, 39, 231, 230, 38, 34, 226
+   \              0xED 0xEC    
+   \              0x2C 0xE4    
+   \              0x24 0x25    
+   \              0xE5 0x27    
+   \              0xE7 0xE6    
+   \              0x26 0x22    
+   \              0xE2         
+   \   0000007A   0xE3 0x23          DC8 227, 35, 225, 33, 32, 224, 160, 96, 97, 161, 99, 163, 162, 98, 102
+   \              0xE1 0x21    
+   \              0x20 0xE0    
+   \              0xA0 0x60    
+   \              0x61 0xA1    
+   \              0x63 0xA3    
+   \              0xA2 0x62    
+   \              0x66         
+   \   00000089   0xA6 0xA7          DC8 166, 167, 103, 165, 101, 100, 164, 108, 172, 173, 109, 175, 111
+   \              0x67 0xA5    
+   \              0x65 0x64    
+   \              0xA4 0x6C    
+   \              0xAC 0xAD    
+   \              0x6D 0xAF    
+   \              0x6F         
+   \   00000096   0x6E 0xAE          DC8 110, 174, 170, 106, 107, 171, 105, 169, 168, 104, 120, 184, 185
+   \              0xAA 0x6A    
+   \              0x6B 0xAB    
+   \              0x69 0xA9    
+   \              0xA8 0x68    
+   \              0x78 0xB8    
+   \              0xB9         
+   \   000000A3   0x79 0xBB          DC8 121, 187, 123, 122, 186, 190, 126, 127, 191, 125, 189, 188, 124
+   \              0x7B 0x7A    
+   \              0xBA 0xBE    
+   \              0x7E 0x7F    
+   \              0xBF 0x7D    
+   \              0xBD 0xBC    
+   \              0x7C         
+   \   000000B0   0xB4 0x74          DC8 180, 116, 117, 181, 119, 183, 182, 118, 114, 178, 179, 115, 177
+   \              0x75 0xB5    
+   \              0x77 0xB7    
+   \              0xB6 0x76    
+   \              0x72 0xB2    
+   \              0xB3 0x73    
+   \              0xB1         
+   \   000000BD   0x71 0x70          DC8 113, 112, 176, 80, 144, 145, 81, 147, 83, 82, 146, 150, 86, 87, 151
+   \              0xB0 0x50    
+   \              0x90 0x91    
+   \              0x51 0x93    
+   \              0x53 0x52    
+   \              0x92 0x96    
+   \              0x56 0x57    
+   \              0x97         
+   \   000000CC   0x55 0x95          DC8 85, 149, 148, 84, 156, 92, 93, 157, 95, 159, 158, 94, 90, 154, 155
+   \              0x94 0x54    
+   \              0x9C 0x5C    
+   \              0x5D 0x9D    
+   \              0x5F 0x9F    
+   \              0x9E 0x5E    
+   \              0x5A 0x9A    
+   \              0x9B         
+   \   000000DB   0x5B 0x99          DC8 91, 153, 89, 88, 152, 136, 72, 73, 137, 75, 139, 138, 74, 78, 142
+   \              0x59 0x58    
+   \              0x98 0x88    
+   \              0x48 0x49    
+   \              0x89 0x4B    
+   \              0x8B 0x8A    
+   \              0x4A 0x4E    
+   \              0x8E         
+   \   000000EA   0x8F 0x4F          DC8 143, 79, 141, 77, 76, 140, 68, 132, 133, 69, 135, 71, 70, 134, 130
+   \              0x8D 0x4D    
+   \              0x4C 0x8C    
+   \              0x44 0x84    
+   \              0x85 0x45    
+   \              0x87 0x47    
+   \              0x46 0x86    
+   \              0x82         
+   \   000000F9   0x42 0x43          DC8 66, 67, 131, 65, 129, 128, 64
+   \              0x83 0x41    
+   \              0x81 0x80    
+   \              0x40         
+     49          	0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 0xC6, 0x06,
+     50          	0x07, 0xC7, 0x05, 0xC5, 0xC4, 0x04, 0xCC, 0x0C, 0x0D, 0xCD,
+     51          	0x0F, 0xCF, 0xCE, 0x0E, 0x0A, 0xCA, 0xCB, 0x0B, 0xC9, 0x09,
+     52          	0x08, 0xC8, 0xD8, 0x18, 0x19, 0xD9, 0x1B, 0xDB, 0xDA, 0x1A,
+     53          	0x1E, 0xDE, 0xDF, 0x1F, 0xDD, 0x1D, 0x1C, 0xDC, 0x14, 0xD4,
+     54          	0xD5, 0x15, 0xD7, 0x17, 0x16, 0xD6, 0xD2, 0x12, 0x13, 0xD3,
+     55          	0x11, 0xD1, 0xD0, 0x10, 0xF0, 0x30, 0x31, 0xF1, 0x33, 0xF3,
+     56          	0xF2, 0x32, 0x36, 0xF6, 0xF7, 0x37, 0xF5, 0x35, 0x34, 0xF4,
+     57          	0x3C, 0xFC, 0xFD, 0x3D, 0xFF, 0x3F, 0x3E, 0xFE, 0xFA, 0x3A,
+     58          	0x3B, 0xFB, 0x39, 0xF9, 0xF8, 0x38, 0x28, 0xE8, 0xE9, 0x29,
+     59          	0xEB, 0x2B, 0x2A, 0xEA, 0xEE, 0x2E, 0x2F, 0xEF, 0x2D, 0xED,
+     60          	0xEC, 0x2C, 0xE4, 0x24, 0x25, 0xE5, 0x27, 0xE7, 0xE6, 0x26,
+     61          	0x22, 0xE2, 0xE3, 0x23, 0xE1, 0x21, 0x20, 0xE0, 0xA0, 0x60,
+     62          	0x61, 0xA1, 0x63, 0xA3, 0xA2, 0x62, 0x66, 0xA6, 0xA7, 0x67,
+     63          	0xA5, 0x65, 0x64, 0xA4, 0x6C, 0xAC, 0xAD, 0x6D, 0xAF, 0x6F,
+     64          	0x6E, 0xAE, 0xAA, 0x6A, 0x6B, 0xAB, 0x69, 0xA9, 0xA8, 0x68,
+     65          	0x78, 0xB8, 0xB9, 0x79, 0xBB, 0x7B, 0x7A, 0xBA, 0xBE, 0x7E,
+     66          	0x7F, 0xBF, 0x7D, 0xBD, 0xBC, 0x7C, 0xB4, 0x74, 0x75, 0xB5,
+     67          	0x77, 0xB7, 0xB6, 0x76, 0x72, 0xB2, 0xB3, 0x73, 0xB1, 0x71,
+     68          	0x70, 0xB0, 0x50, 0x90, 0x91, 0x51, 0x93, 0x53, 0x52, 0x92,
+     69          	0x96, 0x56, 0x57, 0x97, 0x55, 0x95, 0x94, 0x54, 0x9C, 0x5C,
+     70          	0x5D, 0x9D, 0x5F, 0x9F, 0x9E, 0x5E, 0x5A, 0x9A, 0x9B, 0x5B,
+     71          	0x99, 0x59, 0x58, 0x98, 0x88, 0x48, 0x49, 0x89, 0x4B, 0x8B,
+     72          	0x8A, 0x4A, 0x4E, 0x8E, 0x8F, 0x4F, 0x8D, 0x4D, 0x4C, 0x8C,
+     73          	0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42,
+     74          	0x43, 0x83, 0x41, 0x81, 0x80, 0x40
+     75          };
+     76          
+     77          /**
+     78            * @brief ModBus数据buffer到pack
+     79          */
+
+   \                                 In section .text, align 2, keep-with-next
+     80          EN_MODBUS_RESULT ModBusBufToPack(PST_ModBusPack pst_ModBusPack, u8* modbus_RxBuffer)
+     81          {
+   \                     ModBusBufToPack: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     82          	pst_ModBusPack->address = modbus_RxBuffer[0];		/* 地址赋值 */
+   \   00000002   0x780A             LDRB     R2,[R1, #+0]
+   \   00000004   0x7002             STRB     R2,[R0, #+0]
+     83          	pst_ModBusPack->function = modbus_RxBuffer[1];		/* 功能码赋值 */
+   \   00000006   0x784A             LDRB     R2,[R1, #+1]
+   \   00000008   0x7042             STRB     R2,[R0, #+1]
+     84          	pst_ModBusPack->datalen = modbus_RxBuffer[2];		/* 数据长度赋值 */
+   \   0000000A   0x788A             LDRB     R2,[R1, #+2]
+   \   0000000C   0x70C2             STRB     R2,[R0, #+3]
+     85          	if(pst_ModBusPack->datalen)
+   \   0000000E   0x2A00             CMP      R2,#+0
+   \   00000010   0xD003             BEQ.N    ??ModBusBufToPack_0
+     86          	{
+     87          		memcpy(pst_ModBusPack->data, &modbus_RxBuffer[3], pst_ModBusPack->datalen);/* 数据赋值 */
+   \   00000012   0x1CC9             ADDS     R1,R1,#+3
+   \   00000014   0x1D00             ADDS     R0,R0,#+4
+   \   00000016   0x.... 0x....      BL       __aeabi_memcpy
+     88          	}
+     89          	return MR_OK;	
+   \                     ??ModBusBufToPack_0: (+1)
+   \   0000001A   0x2000             MOVS     R0,#+0
+   \   0000001C   0xBD02             POP      {R1,PC}          ;; return
+     90          }
+     91          
+     92          /**
+     93            * @brief 打包一帧数据，并发送 
+     94          */
+
+   \                                 In section .text, align 2, keep-with-next
+     95          void ModBusTxPack(u8* modbus_TxBuffer, PST_ModBusPack pst_ModBusPack)
+     96          {
+   \                     ModBusTxPack: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+     97          	u16 ModBusCRC = 0;									/* CRC16校验码 */
+     98          	modbus_TxBuffer[0] = pst_ModBusPack->address;		/* 地址赋值 */
+   \   00000006   0x7828             LDRB     R0,[R5, #+0]
+   \   00000008   0x7020             STRB     R0,[R4, #+0]
+     99          	modbus_TxBuffer[1] = pst_ModBusPack->function;		/* 功能码赋值 */
+   \   0000000A   0x7868             LDRB     R0,[R5, #+1]
+   \   0000000C   0x7060             STRB     R0,[R4, #+1]
+    100          	modbus_TxBuffer[2] = pst_ModBusPack->datalen;		/* 数据长度赋值 */
+   \   0000000E   0x78E8             LDRB     R0,[R5, #+3]
+   \   00000010   0x70A0             STRB     R0,[R4, #+2]
+    101          	if(pst_ModBusPack->datalen)
+   \   00000012   0x78EA             LDRB     R2,[R5, #+3]
+   \   00000014   0x2A00             CMP      R2,#+0
+   \   00000016   0xD003             BEQ.N    ??ModBusTxPack_0
+    102          	{
+    103          		memcpy(&modbus_TxBuffer[3], pst_ModBusPack->data, pst_ModBusPack->datalen);	/* 数据赋值 */
+   \   00000018   0x1D29             ADDS     R1,R5,#+4
+   \   0000001A   0x1CE0             ADDS     R0,R4,#+3
+   \   0000001C   0x.... 0x....      BL       __aeabi_memcpy
+    104          	}
+    105          	/* CRC16校验 */
+    106          	ModBusCRC = CRC16_Modbus(modbus_TxBuffer, pst_ModBusPack->datalen + 3);			/* 计算CRC校验码 */
+   \                     ??ModBusTxPack_0: (+1)
+   \   00000020   0x78E8             LDRB     R0,[R5, #+3]
+   \   00000022   0x1CC1             ADDS     R1,R0,#+3
+   \   00000024   0xB289             UXTH     R1,R1
+   \   00000026   0x4620             MOV      R0,R4
+   \   00000028   0x.... 0x....      BL       CRC16_Modbus
+    107          	/* 添加校验 */
+    108          	modbus_TxBuffer[pst_ModBusPack->datalen + 3] = (ModBusCRC & 0x0F) << 8;			/* CRC_L */
+   \   0000002C   0x2000             MOVS     R0,#+0
+   \   0000002E   0x78E9             LDRB     R1,[R5, #+3]
+   \   00000030   0x1909             ADDS     R1,R1,R4
+   \   00000032   0x70C8             STRB     R0,[R1, #+3]
+    109          	modbus_TxBuffer[pst_ModBusPack->datalen + 4] = (ModBusCRC & 0xF0) >> 8;			/* CRC_H */
+   \   00000034   0x78E9             LDRB     R1,[R5, #+3]
+   \   00000036   0x1909             ADDS     R1,R1,R4
+   \   00000038   0x7108             STRB     R0,[R1, #+4]
+    110          	/* 执行发送 */
+    111          	ModBusSendPack(modbus_TxBuffer, 0x08);						/* 发送数据包 */
+   \   0000003A   0x2108             MOVS     R1,#+8
+   \   0000003C   0x4620             MOV      R0,R4
+   \   0000003E   0xE8BD 0x4034      POP      {R2,R4,R5,LR}
+   \   00000042                      REQUIRE ModBusSendPack
+   \   00000042                      ;; // Fall through to label ModBusSendPack
+    112          }
+    113          
+    114          /**
+    115            * @brief Modbus发送
+    116           */
+
+   \                                 In section .text, align 2, keep-with-next
+    117          void ModBusSendPack(u8* sendbuf, u8 len)
+    118          {
+   \                     ModBusSendPack: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    119          	ENRS485_TX;							/* 开启RS485发送模式 */
+   \   00000004   0xF44F 0x7180      MOV      R1,#+256
+   \   00000008   0x....             LDR.N    R0,??DataTable2  ;; 0x40010800
+   \   0000000A   0x.... 0x....      BL       GPIO_SetBits
+    120          	OSTimeDlyHMSM(0, 0, 0, 10);			/* 开启RS485发送需要延时10ms左右 */
+   \   0000000E   0x230A             MOVS     R3,#+10
+   \   00000010   0x2200             MOVS     R2,#+0
+   \   00000012   0x4611             MOV      R1,R2
+   \   00000014   0x4608             MOV      R0,R1
+   \   00000016   0x.... 0x....      BL       OSTimeDlyHMSM
+    121          	USART1DMA_Send_Data(sendbuf, 0x08);
+   \   0000001A   0x2108             MOVS     R1,#+8
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0xE8BD 0x4010      POP      {R4,LR}
+   \   00000022   0x.... 0x....      B.W      USART1DMA_Send_Data
+    122          }
+    123          
+    124          /*
+    125          *********************************************************************************************************
+    126          *	函 数 名: CRC16_Modbus
+    127          *	功能说明: 计算CRC。 用于Modbus协议。
+    128          *	形    参: _pBuf : 参与校验的数据
+    129          *			  _usLen : 数据长度
+    130          *	返 回 值: 16位整数值。 对于Modbus ，此结果高字节先传送，低字节后传送。
+    131          *
+    132          *   所有可能的CRC值都被预装在两个数组当中，当计算报文内容时可以简单的索引即可；
+    133          *   一个数组包含有16位CRC域的所有256个可能的高位字节，另一个数组含有低位字节的值；
+    134          *   这种索引访问CRC的方式提供了比对报文缓冲区的每一个新字符都计算新的CRC更快的方法；
+    135          *
+    136          *  注意：此程序内部执行高/低CRC字节的交换。此函数返回的是已经经过交换的CRC值；也就是说，该函数的返回值可以直接放置
+    137          *        于报文用于发送；
+    138          *********************************************************************************************************
+    139          */
+
+   \                                 In section .text, align 2, keep-with-next
+    140          u16 CRC16_Modbus(u8*_pBuf, u16 _usLen)
+    141          {
+   \                     CRC16_Modbus: (+1)
+   \   00000000   0xB410             PUSH     {R4}
+    142          	u8 ucCRCHi = 0xFF; 	/* 高CRC字节初始化 */
+   \   00000002   0x22FF             MOVS     R2,#+255
+    143          	u8 ucCRCLo = 0xFF; 	/* 低CRC 字节初始化 */
+   \   00000004   0x4613             MOV      R3,R2
+   \   00000006   0xE009             B.N      ??CRC16_Modbus_0
+    144          	u16 usIndex;  		/* CRC循环中的索引 */
+    145          
+    146              while (_usLen--)
+    147              {
+    148          		usIndex = ucCRCHi ^ *_pBuf++; /* 计算CRC */
+   \                     ??CRC16_Modbus_1: (+1)
+   \   00000008   0xF810 0x4B01      LDRB     R4,[R0], #+1
+   \   0000000C   0x4054             EORS     R4,R4,R2
+    149          		ucCRCHi = ucCRCLo ^ s_CRCHi[usIndex];
+   \   0000000E   0x.... 0x....      ADR.W    R2,s_CRCHi
+   \   00000012   0x5CA2             LDRB     R2,[R4, R2]
+   \   00000014   0x405A             EORS     R2,R2,R3
+    150          		ucCRCLo = s_CRCLo[usIndex];
+   \   00000016   0x.... 0x....      ADR.W    R3,s_CRCLo
+   \   0000001A   0x5CE3             LDRB     R3,[R4, R3]
+    151              }
+   \                     ??CRC16_Modbus_0: (+1)
+   \   0000001C   0x460C             MOV      R4,R1
+   \   0000001E   0x1E61             SUBS     R1,R4,#+1
+   \   00000020   0xB2A4             UXTH     R4,R4
+   \   00000022   0x2C00             CMP      R4,#+0
+   \   00000024   0xD1F0             BNE.N    ??CRC16_Modbus_1
+    152              return ((u16)ucCRCHi << 8 | ucCRCLo);
+   \   00000026   0xEA43 0x2002      ORR      R0,R3,R2, LSL #+8
+   \   0000002A   0xBC10             POP      {R4}
+   \   0000002C   0x4770             BX       LR               ;; return
+    153          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x40010800         DC32     0x40010800
+    154          
+    155          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       4   CRC16_Modbus
+       8   ModBusBufToPack
+         8   -> __aeabi_memcpy
+       8   ModBusSendPack
+         8   -> GPIO_SetBits
+         8   -> OSTimeDlyHMSM
+         0   -> USART1DMA_Send_Data
+      16   ModBusTxPack
+        16   -> CRC16_Modbus
+         0   -> ModBusSendPack
+        16   -> __aeabi_memcpy
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+      46  CRC16_Modbus
+      30  ModBusBufToPack
+      38  ModBusSendPack
+      66  ModBusTxPack
+     256  s_CRCHi
+     256  s_CRCLo
+
+ 
+ 696 bytes in section .text
+ 
+ 696 bytes of CODE memory
+
+Errors: none
+Warnings: none

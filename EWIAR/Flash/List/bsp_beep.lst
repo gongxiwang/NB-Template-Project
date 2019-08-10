@@ -1,0 +1,147 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_beep.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_beep.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp_beep.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp_beep.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_beep.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  Beep_Driver.c
+      3            * @author  netfire.liang
+      4            * @version  V2.0.0
+      5            * @date  08/01/2013
+      6            * @brief  ·äÃùÆ÷µÄÇý¶¯
+      7            */ 
+      8          #include "bsp.h"
+      9          #include "bsp_beep.h"
+     10          
+     11          /**
+     12            * @brief ·äÃùÆ÷³õÊ¼»¯
+     13          */
+
+   \                                 In section .text, align 2, keep-with-next
+     14          void BSP_Beep_Init(void)
+     15          {
+   \                     BSP_Beep_Init: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     16              GPIO_InitTypeDef gpio;
+     17          
+     18              RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+   \   00000002   0x2101             MOVS     R1,#+1
+   \   00000004   0x2008             MOVS     R0,#+8
+   \   00000006   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+     19              
+     20              gpio.GPIO_Pin = GPIO_Pin_15;
+   \   0000000A   0xF44F 0x4000      MOV      R0,#+32768
+   \   0000000E   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     21              gpio.GPIO_Mode = GPIO_Mode_Out_PP;	
+   \   00000012   0x2010             MOVS     R0,#+16
+   \   00000014   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     22              gpio.GPIO_Speed = GPIO_Speed_50MHz;	
+   \   00000018   0x2003             MOVS     R0,#+3
+   \   0000001A   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     23              GPIO_Init(GPIOB, &gpio);
+   \   0000001E   0xA900             ADD      R1,SP,#+0
+   \   00000020   0x....             LDR.N    R0,??DataTable2  ;; 0x40010c00
+   \   00000022   0x.... 0x....      BL       GPIO_Init
+     24              Beep_off();
+   \   00000026   0x.... 0x....      BL       Beep_off
+     25          }
+   \   0000002A   0xBD01             POP      {R0,PC}          ;; return
+     26          
+     27          /**
+     28            * @brief ´ò¿ª·äÃùÆ÷
+     29          */
+
+   \                                 In section .text, align 2, keep-with-next
+     30          void Beep_on(void)
+     31          {
+     32              GPIO_SetBits(GPIOB, GPIO_Pin_15);
+   \                     Beep_on: (+1)
+   \   00000000   0xF44F 0x4100      MOV      R1,#+32768
+   \   00000004   0x....             LDR.N    R0,??DataTable2  ;; 0x40010c00
+   \   00000006   0x.... 0x....      B.W      GPIO_SetBits
+     33          }
+     34          
+     35          /**
+     36            * @brief ¹Ø±Õ·äÃùÆ÷
+     37          */
+
+   \                                 In section .text, align 2, keep-with-next
+     38          void Beep_off(void)
+     39          {
+     40              GPIO_ResetBits(GPIOB, GPIO_Pin_15);
+   \                     Beep_off: (+1)
+   \   00000000   0xF44F 0x4100      MOV      R1,#+32768
+   \   00000004   0x....             LDR.N    R0,??DataTable2  ;; 0x40010c00
+   \   00000006   0x.... 0x....      B.W      GPIO_ResetBits
+     41          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x40010C00         DC32     0x40010c00
+     42          
+     43          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   BSP_Beep_Init
+         8   -> Beep_off
+         8   -> GPIO_Init
+         8   -> RCC_APB2PeriphClockCmd
+       0   Beep_off
+         0   -> GPIO_ResetBits
+       0   Beep_on
+         0   -> GPIO_SetBits
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+      44  BSP_Beep_Init
+      10  Beep_off
+      10  Beep_on
+
+ 
+ 68 bytes in section .text
+ 
+ 68 bytes of CODE memory
+
+Errors: none
+Warnings: none

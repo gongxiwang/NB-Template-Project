@@ -1,0 +1,220 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.40.3.8902/W32 for ARM        12/Jul/2019  09:14:39
+# Copyright 1999-2015 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_adc.c
+#    Command line =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_adc.c -D
+#        LORA_MODULE -lCN
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\ -o
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\
+#        --no_unroll --no_inline --no_tbaa --no_scheduling --debug
+#        --endian=little --cpu=Cortex-M3 -e --fpu=None --dlib_config
+#        D:\Softwares\IAR7.40\arm\INC\c\DLib_Config_Full.h -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\CPU\inc\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-CPU\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-LIB\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Ports\
+#        -I
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\UCOS-II\uC-OSII\Source\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\BSP\
+#        -I E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\..\USER\APP\
+#        -Om --use_c++_inline
+#    List file    =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\List\bsp_adc.lst
+#    Object file  =  
+#        E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\EWIAR\Flash\Obj\bsp_adc.o
+#
+###############################################################################
+
+E:\MYWorkPlace\SVNData\zhouwanli\XF-SXT-N-V1.0\USER\BSP\bsp_adc.c
+      1          /** @copyright XunFang Communication Tech Limited. All rights reserved. 2013.
+      2            * @file  bsp_adc.c
+      3            * @author  walle
+      4            * @version  V1.0.0
+      5            * @date  10/05/2019
+      6            * @brief  ADC驱动
+      7            */ 
+      8          #include "bsp.h"
+      9          #include "bsp_dma.h"
+     10          #include "stm32f10x_dma.h"
+     11          #include "bsp_adc.h"
+     12          #include "app_uart.h"
+     13          
+     14          
+     15          
+     16          /*
+     17          *********************************************************************************************************
+     18          *                                             BSP_ADCS_Init()
+     19          *
+     20          * Description : Initialize the board's ADC
+     21          *
+     22          * Argument(s) : none.
+     23          *
+     24          * Return(s)   : none.
+     25          *
+     26          * Caller(s)   : BSP_Init().
+     27          *
+     28          * Note(s)     : none.
+     29          *********************************************************************************************************
+     30          */
+     31          
+
+   \                                 In section .text, align 4, keep-with-next
+     32          void  BSP_ADCS_Init (void)
+     33          {
+   \                     BSP_ADCS_Init: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB086             SUB      SP,SP,#+24
+     34              ADC_InitTypeDef   adc_init;
+     35              GPIO_InitTypeDef  gpio_init;
+     36          	ADC_DeInit(ADC1);
+   \   00000004   0x4C26             LDR.N    R4,??BSP_ADCS_Init_0  ;; 0x40012400
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       ADC_DeInit
+     37          
+     38              RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1 | RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOB | RCC_APB2Periph_AFIO, ENABLE);
+   \   0000000C   0x2101             MOVS     R1,#+1
+   \   0000000E   0xF240 0x2019      MOVW     R0,#+537
+   \   00000012   0x.... 0x....      BL       RCC_APB2PeriphClockCmd
+     39          	
+     40              gpio_init.GPIO_Pin  = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+   \   00000016   0x200F             MOVS     R0,#+15
+   \   00000018   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     41              gpio_init.GPIO_Mode = GPIO_Mode_AIN;
+   \   0000001C   0x2000             MOVS     R0,#+0
+   \   0000001E   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     42          	gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+   \   00000022   0x2003             MOVS     R0,#+3
+   \   00000024   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     43              GPIO_Init(GPIOC, &gpio_init);
+   \   00000028   0xA900             ADD      R1,SP,#+0
+   \   0000002A   0x481E             LDR.N    R0,??BSP_ADCS_Init_0+0x4  ;; 0x40011000
+   \   0000002C   0x.... 0x....      BL       GPIO_Init
+     44          
+     45          	gpio_init.GPIO_Pin  = GPIO_Pin_7;
+   \   00000030   0x2080             MOVS     R0,#+128
+   \   00000032   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     46              gpio_init.GPIO_Mode = GPIO_Mode_Out_PP;
+   \   00000036   0x2010             MOVS     R0,#+16
+   \   00000038   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     47          	gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+   \   0000003C   0x2003             MOVS     R0,#+3
+   \   0000003E   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     48              GPIO_Init(GPIOB, &gpio_init);
+   \   00000042   0xA900             ADD      R1,SP,#+0
+   \   00000044   0x4818             LDR.N    R0,??BSP_ADCS_Init_0+0x8  ;; 0x40010c00
+   \   00000046   0x.... 0x....      BL       GPIO_Init
+     49          
+     50              adc_init.ADC_Mode               = ADC_Mode_Independent;
+   \   0000004A   0x2000             MOVS     R0,#+0
+   \   0000004C   0x9001             STR      R0,[SP, #+4]
+     51              adc_init.ADC_ScanConvMode       = DISABLE;
+   \   0000004E   0xF8AD 0x0008      STRH     R0,[SP, #+8]
+     52              adc_init.ADC_ContinuousConvMode = DISABLE;						/* 使能连续转换 */
+     53              adc_init.ADC_ExternalTrigConv   = ADC_ExternalTrigConv_None;
+   \   00000052   0xF44F 0x2060      MOV      R0,#+917504
+   \   00000056   0x9003             STR      R0,[SP, #+12]
+     54              adc_init.ADC_DataAlign          = ADC_DataAlign_Right;
+   \   00000058   0x2000             MOVS     R0,#+0
+   \   0000005A   0x9004             STR      R0,[SP, #+16]
+     55              adc_init.ADC_NbrOfChannel       = 1;							/* 按顺序转换采样通道 */
+   \   0000005C   0x2001             MOVS     R0,#+1
+   \   0000005E   0xF88D 0x0014      STRB     R0,[SP, #+20]
+     56              ADC_Init(ADC1, &adc_init);
+   \   00000062   0xA901             ADD      R1,SP,#+4
+   \   00000064   0x4620             MOV      R0,R4
+   \   00000066   0x.... 0x....      BL       ADC_Init
+     57          #if 0
+     58          	/* 设置采样通道 */
+     59              ADC_RegularChannelConfig(ADC2, ADC_Channel_10, 1, ADC_SampleTime_13Cycles5);
+     60          	ADC_RegularChannelConfig(ADC2, ADC_Channel_11, 2, ADC_SampleTime_13Cycles5);
+     61          	ADC_RegularChannelConfig(ADC2, ADC_Channel_12, 3, ADC_SampleTime_13Cycles5);
+     62          	ADC_RegularChannelConfig(ADC2, ADC_Channel_13, 4, ADC_SampleTime_13Cycles5);
+     63          #endif
+     64          	ADC_Cmd(ADC1, ENABLE);
+   \   0000006A   0x2101             MOVS     R1,#+1
+   \   0000006C   0x4620             MOV      R0,R4
+   \   0000006E   0x.... 0x....      BL       ADC_Cmd
+     65             
+     66          	/* Enable ADC1 reset calibaration register */	 
+     67          	ADC_ResetCalibration(ADC1);
+   \   00000072   0x4620             MOV      R0,R4
+   \   00000074   0x.... 0x....      BL       ADC_ResetCalibration
+     68          	/* Check the end of ADC1 reset calibration register */
+     69          	while(ADC_GetResetCalibrationStatus(ADC1));
+   \                     ??BSP_ADCS_Init_1: (+1)
+   \   00000078   0x4620             MOV      R0,R4
+   \   0000007A   0x.... 0x....      BL       ADC_GetResetCalibrationStatus
+   \   0000007E   0x2800             CMP      R0,#+0
+   \   00000080   0xD1FA             BNE.N    ??BSP_ADCS_Init_1
+     70          	/* Start ADC1 calibaration */
+     71          	ADC_StartCalibration(ADC1);
+   \   00000082   0x4620             MOV      R0,R4
+   \   00000084   0x.... 0x....      BL       ADC_StartCalibration
+     72          	/* Check the end of ADC1 calibration */
+     73          	while(ADC_GetCalibrationStatus(ADC1));
+   \                     ??BSP_ADCS_Init_2: (+1)
+   \   00000088   0x4620             MOV      R0,R4
+   \   0000008A   0x.... 0x....      BL       ADC_GetCalibrationStatus
+   \   0000008E   0x2800             CMP      R0,#+0
+   \   00000090   0xD1FA             BNE.N    ??BSP_ADCS_Init_2
+     74          	/* Start ADC1 Software Conversion */ 
+     75          	ADC_SoftwareStartConvCmd(ADC1, DISABLE);
+   \   00000092   0x2100             MOVS     R1,#+0
+   \   00000094   0x4620             MOV      R0,R4
+   \   00000096   0x.... 0x....      BL       ADC_SoftwareStartConvCmd
+     76          }
+   \   0000009A   0xB006             ADD      SP,SP,#+24
+   \   0000009C   0xBD10             POP      {R4,PC}          ;; return
+   \   0000009E   0xBF00             Nop      
+   \                     ??BSP_ADCS_Init_0:
+   \   000000A0   0x40012400         DC32     0x40012400
+   \   000000A4   0x40011000         DC32     0x40011000
+   \   000000A8   0x40010C00         DC32     0x40010c00
+     77          
+     78          
+     79          
+     80          
+     81          
+     82          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      32   BSP_ADCS_Init
+        32   -> ADC_Cmd
+        32   -> ADC_DeInit
+        32   -> ADC_GetCalibrationStatus
+        32   -> ADC_GetResetCalibrationStatus
+        32   -> ADC_Init
+        32   -> ADC_ResetCalibration
+        32   -> ADC_SoftwareStartConvCmd
+        32   -> ADC_StartCalibration
+        32   -> GPIO_Init
+        32   -> RCC_APB2PeriphClockCmd
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+     172  BSP_ADCS_Init
+
+ 
+ 172 bytes in section .text
+ 
+ 172 bytes of CODE memory
+
+Errors: none
+Warnings: none
